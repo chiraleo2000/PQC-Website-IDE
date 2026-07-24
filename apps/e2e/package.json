@@ -1,0 +1,20 @@
+{
+  "name": "@pqc/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:demo": "playwright test pqc-demo-visual --project=demo --headed --workers=1",
+    "test:ide": "playwright test ide-save-flow --project=chromium",
+    "test:compiled": "node scripts/run-compiled-test.mjs",
+    "prepare:demo": "tsx scripts/prepare-compiled-demo.ts"
+  },
+  "devDependencies": {
+    "@noble/post-quantum": "^0.4.0",
+    "@playwright/test": "^1.49.1",
+    "@pqc/shared": "workspace:*",
+    "serve": "^14.2.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

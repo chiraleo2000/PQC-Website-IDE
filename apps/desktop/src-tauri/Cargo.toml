@@ -1,0 +1,21 @@
+[package]
+name = "pqc-website-ide-desktop"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "pqc_website_ide_desktop_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+aes-gcm = "0.10"
+argon2 = "0.5"
+rand = "0.8"
+base64 = "0.22"
+zeroize = { version = "1", features = ["zeroize_derive"] }

@@ -1,0 +1,15 @@
+# File-based router (works without Docker provider / docker.sock)
+http:
+  routers:
+    pqc-ide:
+      rule: "Host(`localhost`) || Host(`127.0.0.1`)"
+      entryPoints:
+        - websecure
+      service: pqc-web
+      tls: {}
+
+  services:
+    pqc-web:
+      loadBalancer:
+        servers:
+          - url: "http://web:8080"

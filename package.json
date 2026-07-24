@@ -1,0 +1,24 @@
+{
+  "name": "pqc-website-ide",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zero-Trust low-code website IDE with Post-Quantum Cryptography",
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "security-tests": "pnpm --filter @pqc/security-tests test",
+    "test:unit": "pnpm --filter @pqc/shared --filter @pqc/api-gateway --filter @pqc/web test",
+    "test:unit:coverage": "pnpm --filter @pqc/shared --filter @pqc/api-gateway --filter @pqc/web test:coverage",
+    "test:e2e": "pnpm --filter @pqc/e2e test",
+    "test:compiled-demo": "pnpm --filter @pqc/demo-runtime build && pnpm --filter @pqc/e2e run prepare:demo && pnpm --filter @pqc/e2e run test:compiled"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "devDependencies": {
+    "@vitest/coverage-v8": "2.1.9"
+  }
+}

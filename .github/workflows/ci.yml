@@ -1,0 +1,160 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install
+
+      - name: Build shared
+        run: pnpm --filter @pqc/shared build
+
+      - name: Lint TypeScript
+        run: |
+          pnpm --filter @pqc/web lint
+          pnpm --filter @pqc/api-gateway lint
+
+      - name: Build web
+        run: pnpm --filter @pqc/web build
+
+      - name: Build gateway
+        run: pnpm --filter @pqc/api-gateway build
+
+  go-crypto:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/crypto-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - run: go mod tidy
+      - run: go build -o /dev/null .
+
+  security-tests:
+    runs-on: ubuntu-latest
+    needs: [lint-build, go-crypto]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - run: pnpm install
+      - run: pnpm --filter @pqc/shared build
+
+      - name: Start crypto-service
+        working-directory: apps/crypto-service
+        env:
+          CRYPTO_PORT: "4081"
+        run: |
+          go mod tidy
+          go run . &
+          sleep 2
+
+      - name: Start api-gateway
+        env:
+          PORT: "4000"
+          CRYPTO_SERVICE_URL: http://127.0.0.1:4081
+          ENFORCE_PQC_ONLY: "true"
+        run: |
+          pnpm --filter @pqc/api-gateway dev &
+          sleep 3
+
+      - name: Security tests
+        run: pnpm --filter @pqc/security-tests test
+        env:
+          API_URL: http://localhost:4000
+          ENFORCE_PQC_ONLY: "true"
+
+  unit:
+    runs-on: ubuntu-latest
+    needs: [lint-build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm --filter @pqc/shared build
+      - run: pnpm --filter @pqc/demo-runtime build
+      - run: pnpm test:unit
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: [lint-build, go-crypto, unit]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: pqc_ide
+          POSTGRES_USER: pqc_ide
+          POSTGRES_PASSWORD: pqc_ide_secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pqc_ide -d pqc_ide"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: pnpm
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+      - run: pnpm install
+      - run: pnpm --filter @pqc/shared build
+      - run: pnpm --filter @pqc/demo-runtime build
+      - run: pnpm --filter @pqc/e2e exec playwright install chromium
+      - run: pnpm --filter @pqc/e2e test
+        env:
+          CI: true
+          DATABASE_URL: postgresql://pqc_ide:pqc_ide_secret@localhost:5432/pqc_ide
+      - run: pnpm test:compiled-demo
+        env:
+          CI: true
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: [lint-build, go-crypto]
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose -f infra/docker-compose.yml build

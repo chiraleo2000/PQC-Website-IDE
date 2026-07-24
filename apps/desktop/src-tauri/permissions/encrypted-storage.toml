@@ -1,0 +1,13 @@
+# Scoped IPC: only encrypted local project storage commands (no shell/fs plugins).
+
+[[permission]]
+identifier = "allow-encrypted-storage"
+description = "AES-256-GCM read/write for IDE project files under app data dir"
+commands.allow = [
+  "read_encrypted_project",
+  "write_encrypted_project",
+  "list_encrypted_projects",
+  "delete_encrypted_project",
+  "get_projects_storage_path",
+  "hardware_key_available",
+]

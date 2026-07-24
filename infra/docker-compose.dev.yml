@@ -1,0 +1,7 @@
+# Optional: enable Traefik TLS edge in addition to dev ports.
+# Usage: docker compose -f infra/docker-compose.yml -f infra/docker-compose.dev.yml --profile tls-edge up -d
+
+services:
+  traefik:
+    profiles:
+      - tls-edge

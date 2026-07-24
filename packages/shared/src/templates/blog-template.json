@@ -1,0 +1,209 @@
+{
+  "version": 1,
+  "root": {
+    "id": "b1000000-0000-4000-8000-000000000001",
+    "type": "section",
+    "props": {
+      "className": "min-h-screen flex flex-col bg-zinc-950 text-zinc-100",
+      "page": "blog"
+    },
+    "children": [
+      {
+        "id": "b1000000-0000-4000-8000-000000000002",
+        "type": "nav",
+        "props": {
+          "className": "flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 px-6 py-4"
+        },
+        "children": [
+          {
+            "id": "b1000000-0000-4000-8000-000000000003",
+            "type": "h1",
+            "props": { "className": "text-lg font-semibold", "children": "PQC Blog Feed" },
+            "children": []
+          },
+          {
+            "id": "b1000000-0000-4000-8000-000000000004",
+            "type": "div",
+            "props": { "className": "flex gap-4 text-sm" },
+            "children": [
+              {
+                "id": "b1000000-0000-4000-8000-000000000005",
+                "type": "a",
+                "props": {
+                  "href": "#new-post",
+                  "className": "text-cyan-400 hover:text-cyan-300",
+                  "children": "New post"
+                },
+                "children": []
+              },
+              {
+                "id": "b1000000-0000-4000-8000-000000000006",
+                "type": "a",
+                "props": {
+                  "href": "/login.html",
+                  "className": "text-zinc-400 hover:text-zinc-200",
+                  "children": "Login"
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "b1000000-0000-4000-8000-000000000007",
+        "type": "main",
+        "props": { "className": "mx-auto w-full max-w-2xl flex-1 space-y-8 px-6 py-8" },
+        "children": [
+          {
+            "id": "b1000000-0000-4000-8000-000000000008",
+            "type": "newPostForm",
+            "props": {
+              "className": "rounded-xl border border-zinc-800 bg-zinc-900/40 p-5 space-y-3",
+              "dataDemo": "new-post"
+            },
+            "children": [
+              {
+                "id": "b1000000-0000-4000-8000-000000000009",
+                "type": "h2",
+                "props": { "className": "text-lg font-medium", "children": "New Post" },
+                "children": []
+              },
+              {
+                "id": "b1000000-0000-4000-8000-00000000000a",
+                "type": "label",
+                "props": { "for": "new-post-title", "children": "Title" },
+                "children": []
+              },
+              {
+                "id": "b1000000-0000-4000-8000-00000000000b",
+                "type": "input",
+                "props": {
+                  "id": "new-post-title",
+                  "type": "text",
+                  "name": "title",
+                  "placeholder": "Post title",
+                  "className": "w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2"
+                },
+                "children": []
+              },
+              {
+                "id": "b1000000-0000-4000-8000-000000000017",
+                "type": "textarea",
+                "props": {
+                  "name": "body",
+                  "placeholder": "Post body (optional)",
+                  "className": "w-full min-h-[72px] rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2"
+                },
+                "children": []
+              },
+              {
+                "id": "b1000000-0000-4000-8000-00000000000c",
+                "type": "button",
+                "props": {
+                  "type": "button",
+                  "dataDemo": "post-submit",
+                  "children": "Publish",
+                  "className": "rounded-lg bg-cyan-500 px-4 py-2 font-medium text-zinc-950 hover:bg-cyan-400"
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "b1000000-0000-4000-8000-00000000000d",
+            "type": "h2",
+            "props": { "className": "text-sm font-medium uppercase tracking-wider text-zinc-500", "children": "Posts" },
+            "children": []
+          },
+          {
+            "id": "b1000000-0000-4000-8000-00000000000e",
+            "type": "blogFeed",
+            "props": {
+              "className": "space-y-4",
+              "dataDemo": "blog-feed",
+              "apiPath": "/demo-api/posts"
+            },
+            "children": [
+              {
+                "id": "b1000000-0000-4000-8000-00000000000f",
+                "type": "blogCard",
+                "props": {
+                  "className": "rounded-xl border border-zinc-800 bg-zinc-900/30 p-5",
+                  "dataDemo": "blog-card"
+                },
+                "children": [
+                  {
+                    "id": "b1000000-0000-4000-8000-000000000010",
+                    "type": "h3",
+                    "props": {
+                      "className": "text-base font-semibold text-zinc-100",
+                      "dataDemo": "card-title",
+                      "children": "Welcome to the PQC Blog"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "b1000000-0000-4000-8000-000000000011",
+                    "type": "p",
+                    "props": {
+                      "className": "mt-2 text-sm text-zinc-400",
+                      "dataDemo": "card-body",
+                      "children": "Published posts from the demo API are mapped into cards at runtime."
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "id": "b1000000-0000-4000-8000-000000000012",
+                "type": "blogCard",
+                "props": {
+                  "className": "rounded-xl border border-zinc-800 bg-zinc-900/30 p-5",
+                  "dataDemo": "blog-card"
+                },
+                "children": [
+                  {
+                    "id": "b1000000-0000-4000-8000-000000000013",
+                    "type": "h3",
+                    "props": {
+                      "className": "text-base font-semibold text-zinc-100",
+                      "dataDemo": "card-title",
+                      "children": "Quantum-safe by design"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "b1000000-0000-4000-8000-000000000014",
+                    "type": "p",
+                    "props": {
+                      "className": "mt-2 text-sm text-zinc-400",
+                      "dataDemo": "card-body",
+                      "children": "Each card is cloned from this template when new posts arrive."
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "b1000000-0000-4000-8000-000000000015",
+        "type": "footer",
+        "props": {
+          "className": "border-t border-zinc-800 px-6 py-4 text-center text-xs text-zinc-500"
+        },
+        "children": [
+          {
+            "id": "b1000000-0000-4000-8000-000000000016",
+            "type": "p",
+            "props": { "children": "blogFeed maps API posts → blogCard · newPostForm posts to /demo-api/posts" },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

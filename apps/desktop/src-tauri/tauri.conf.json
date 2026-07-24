@@ -1,0 +1,60 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "PQC Website IDE",
+  "version": "0.1.0",
+  "identifier": "com.pqc.website-ide",
+  "build": {
+    "beforeDevCommand": "pnpm --filter @pqc/web dev",
+    "devUrl": "http://localhost:4001",
+    "beforeBuildCommand": "pnpm --filter @pqc/web build",
+    "frontendDist": "../../web/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "PQC Website IDE",
+        "width": 1400,
+        "height": 900,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self'",
+        "style-src": "'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src": "'self' https://fonts.gstatic.com",
+        "img-src": "'self' data: https:",
+        "connect-src": "'self' http://localhost:4000 http://127.0.0.1:4000",
+        "object-src": "'none'",
+        "base-uri": "'self'",
+        "frame-ancestors": "'none'",
+        "form-action": "'self'"
+      },
+      "devCsp": {
+        "default-src": "'self' http://localhost:4001 http://127.0.0.1:4001",
+        "script-src": "'self' 'unsafe-inline' 'unsafe-eval' http://localhost:4001",
+        "style-src": "'self' 'unsafe-inline' http://localhost:4001 https://fonts.googleapis.com",
+        "font-src": "'self' https://fonts.gstatic.com",
+        "img-src": "'self' data: https: http://localhost:4001",
+        "connect-src": "'self' http://localhost:4000 http://127.0.0.1:4000 http://localhost:4001 ws://localhost:4001",
+        "object-src": "'none'"
+      },
+      "freezePrototype": true,
+      "dangerousDisableAssetCspModification": false,
+      "capabilities": ["encrypted-storage-capability"]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

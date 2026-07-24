@@ -1,0 +1,11 @@
+# Default certificate for local sovereign edge (self-signed or mkcert).
+# Place files at infra/traefik/certs/fullchain.pem and privkey.pem
+tls:
+  certificates:
+    - certFile: /certs/fullchain.pem
+      keyFile: /certs/privkey.pem
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/fullchain.pem
+        keyFile: /certs/privkey.pem

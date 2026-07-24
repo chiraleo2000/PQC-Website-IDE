@@ -1,0 +1,73 @@
+{
+  "target": "http://127.0.0.1:4001/",
+  "algorithms": {
+    "kem": "ML-KEM-768",
+    "classicalKem": "X25519",
+    "cipher": "AES-256-GCM",
+    "sign": "ML-DSA-65"
+  },
+  "checks": {
+    "health_200": true,
+    "enforcePqcOnly": true,
+    "light_theme": true,
+    "theme_toggle": true,
+    "hero_undo": true,
+    "sync_200": true,
+    "sync_pqc_algorithms": true,
+    "publish_200": true,
+    "publish_mldsa": true,
+    "export_200": true,
+    "all_selenium": true
+  },
+  "health": {
+    "body": {
+      "enforcePqcOnly": true,
+      "port": 4000,
+      "status": "ok"
+    },
+    "status": 200
+  },
+  "sync": {
+    "status": 200,
+    "envelope": {
+      "version": 2,
+      "kem.algorithm": "ML-KEM-768",
+      "kem.ciphertextLen": 1452,
+      "classicalKem.algorithm": "X25519",
+      "classicalKem.ephemeralPublicKeyLen": 44,
+      "cipher.algorithm": "AES-256-GCM",
+      "cipher.ivLen": 16,
+      "cipher.ciphertextLen": 5540,
+      "cipher.tagLen": 24,
+      "signature.algorithm": "ML-DSA-65",
+      "signature.valueLen": 4412,
+      "nonceLen": 36,
+      "astNodeCount": 24,
+      "projectId": "e82581dd-a9f8-475c-a7e1-9e1d383446fc",
+      "timestamp": "2026-07-22T10:08:57.382Z"
+    }
+  },
+  "publish": {
+    "status": 200,
+    "intent": {
+      "action": "publish",
+      "projectId": "e82581dd-a9f8-475c-a7e1-9e1d383446fc",
+      "signature.algorithm": "ML-DSA-65",
+      "signature.valueLen": 4412,
+      "signerPublicKeyId": "486dc4a3-a380-4d48-b087-fd4dd0d888b4",
+      "timestamp": "2026-07-22T10:08:59.439Z"
+    }
+  },
+  "export": {
+    "status": 200,
+    "hits": [
+      {
+        "url": "http://127.0.0.1:4001/api/projects/e82581dd-a9f8-475c-a7e1-9e1d383446fc/export",
+        "status": 200,
+        "mime": "application/zip"
+      }
+    ],
+    "note": "Export is JWT + stored AST ZIP; PQC proven on prior sync decrypt"
+  },
+  "verdict": "PASS \u2014 site data transferred with ML-KEM-768 + X25519 + AES-256-GCM + ML-DSA-65; classical harvestable envelopes are rejected by ENFORCE_PQC_ONLY (see security-tests)"
+}

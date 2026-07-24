@@ -1,0 +1,145 @@
+{
+  "version": 1,
+  "root": {
+    "id": "a1000000-0000-4000-8000-000000000001",
+    "type": "section",
+    "props": {
+      "className": "min-h-screen flex flex-col bg-zinc-950 text-zinc-100",
+      "page": "login"
+    },
+    "children": [
+      {
+        "id": "a1000000-0000-4000-8000-000000000002",
+        "type": "nav",
+        "props": {
+          "className": "flex items-center justify-between border-b border-zinc-800 px-6 py-4"
+        },
+        "children": [
+          {
+            "id": "a1000000-0000-4000-8000-000000000003",
+            "type": "h1",
+            "props": { "className": "text-lg font-semibold", "children": "PQC Builder" },
+            "children": []
+          },
+          {
+            "id": "a1000000-0000-4000-8000-000000000004",
+            "type": "a",
+            "props": {
+              "href": "/blog.html",
+              "className": "text-sm text-cyan-400 hover:text-cyan-300",
+              "children": "View blog demo →"
+            },
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000005",
+        "type": "main",
+        "props": {
+          "className": "flex flex-1 flex-col items-center justify-center px-6 py-12"
+        },
+        "children": [
+          {
+            "id": "a1000000-0000-4000-8000-000000000006",
+            "type": "div",
+            "props": { "className": "w-full max-w-md space-y-6" },
+            "children": [
+              {
+                "id": "a1000000-0000-4000-8000-000000000007",
+                "type": "h2",
+                "props": {
+                  "className": "text-2xl font-semibold tracking-tight",
+                  "children": "Sign in"
+                },
+                "children": []
+              },
+              {
+                "id": "a1000000-0000-4000-8000-000000000008",
+                "type": "p",
+                "props": {
+                  "className": "text-sm text-zinc-400",
+                  "children": "Use demo@local / demo-password on the compiled blog app."
+                },
+                "children": []
+              },
+              {
+                "id": "a1000000-0000-4000-8000-000000000009",
+                "type": "form",
+                "props": {
+                  "className": "space-y-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-6"
+                },
+                "children": [
+                  {
+                    "id": "a1000000-0000-4000-8000-000000000010",
+                    "type": "label",
+                    "props": { "for": "login-email", "children": "Email" },
+                    "children": []
+                  },
+                  {
+                    "id": "a1000000-0000-4000-8000-000000000011",
+                    "type": "input",
+                    "props": {
+                      "id": "login-email",
+                      "type": "email",
+                      "name": "email",
+                      "placeholder": "you@example.com",
+                      "autocomplete": "email",
+                      "className": "w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "a1000000-0000-4000-8000-000000000012",
+                    "type": "label",
+                    "props": { "for": "login-password", "children": "Password" },
+                    "children": []
+                  },
+                  {
+                    "id": "a1000000-0000-4000-8000-000000000013",
+                    "type": "input",
+                    "props": {
+                      "id": "login-password",
+                      "type": "password",
+                      "name": "password",
+                      "placeholder": "••••••••",
+                      "autocomplete": "current-password",
+                      "className": "w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100"
+                    },
+                    "children": []
+                  },
+                  {
+                    "id": "a1000000-0000-4000-8000-000000000014",
+                    "type": "button",
+                    "props": {
+                      "type": "submit",
+                      "dataDemo": "login-submit",
+                      "children": "Sign in",
+                      "className": "mt-2 w-full rounded-lg bg-cyan-500 py-2.5 font-medium text-zinc-950 hover:bg-cyan-400"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000015",
+        "type": "footer",
+        "props": {
+          "className": "border-t border-zinc-800 px-6 py-4 text-center text-xs text-zinc-500"
+        },
+        "children": [
+          {
+            "id": "a1000000-0000-4000-8000-000000000016",
+            "type": "p",
+            "props": { "children": "AST template · ML-KEM / ML-DSA secured sync in the IDE" },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

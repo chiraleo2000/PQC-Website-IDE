@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blog</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-scope="blog" data-demo-page="blog">
+<section data-node-id="b1000000-0000-4000-8000-000000000001"><nav data-node-id="b1000000-0000-4000-8000-000000000002"><h1 data-node-id="b1000000-0000-4000-8000-000000000003">PQC Blog Feed</h1>
+<div data-node-id="b1000000-0000-4000-8000-000000000004"><a data-node-id="b1000000-0000-4000-8000-000000000005" href="#new-post">New post</a>
+<a data-node-id="b1000000-0000-4000-8000-000000000006" href="/login.html">Login</a></div></nav>
+<main data-node-id="b1000000-0000-4000-8000-000000000007"><div data-node-id="b1000000-0000-4000-8000-000000000008" data-demo="new-post" data-demo="new-post"><h2 data-node-id="b1000000-0000-4000-8000-000000000009">New Post</h2>
+<label data-node-id="b1000000-0000-4000-8000-00000000000a" for="new-post-title">Title</label>
+<input data-node-id="b1000000-0000-4000-8000-00000000000b" id="new-post-title" type="text" name="title" placeholder="Post title" />
+<textarea data-node-id="b1000000-0000-4000-8000-000000000017" name="body" placeholder="Post body (optional)"></textarea>
+<button data-node-id="b1000000-0000-4000-8000-00000000000c" type="button" data-demo="post-submit">Publish</button></div>
+<h2 data-node-id="b1000000-0000-4000-8000-00000000000d">Posts</h2>
+<div data-node-id="b1000000-0000-4000-8000-00000000000e" data-demo="blog-feed" data-demo="blog-feed"><div data-node-id="b1000000-0000-4000-8000-00000000000f" data-demo="blog-card" data-demo="blog-card"><h3 data-node-id="b1000000-0000-4000-8000-000000000010" data-demo="card-title">Welcome to the PQC Blog</h3>
+<p data-node-id="b1000000-0000-4000-8000-000000000011" data-demo="card-body">Published posts from the demo API are mapped into cards at runtime.</p></div>
+<div data-node-id="b1000000-0000-4000-8000-000000000012" data-demo="blog-card" data-demo="blog-card"><h3 data-node-id="b1000000-0000-4000-8000-000000000013" data-demo="card-title">Quantum-safe by design</h3>
+<p data-node-id="b1000000-0000-4000-8000-000000000014" data-demo="card-body">Each card is cloned from this template when new posts arrive.</p></div></div></main>
+<footer data-node-id="b1000000-0000-4000-8000-000000000015"><p data-node-id="b1000000-0000-4000-8000-000000000016">blogFeed maps API posts → blogCard · newPostForm posts to /demo-api/posts</p></footer></section>
+  <script>window.__PQC_API__='http://localhost:4000'</script>
+  <script type="module" src="demo-app.js"></script>
+</body>
+</html>

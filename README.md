@@ -1,687 +1,197 @@
-# 🔐 PQC CyberSec Simulator
+# PQC Website IDE
 
-**A Post-Quantum Cryptography Security Simulation Suite** demonstrating quantum computing threats and the importance of PQC migration. This educational platform shows the "**Harvest Now, Decrypt Later**" (HNDL) attack in real-time with interactive government services.
+> **Status: active development (pre-1.0).** APIs, wire formats, and UI may change. Feedback and contributions are welcome.
 
----
+**Open-source low-code website builder** that encrypts and authenticates every design sync with **NIST post-quantum cryptography**, while keeping today’s classical security practices (AES-GCM, TLS, JWT zero-trust).
 
-## � Encryption Model (Industry Standard)
+Build pages visually. On **Save**, the site AST is protected with a **hybrid KEM** and an **ML-DSA digital signature** so data transfer is harder to harvest-now / decrypt-later when large quantum computers arrive—and still meets current cybersecurity expectations.
 
-This simulator uses **realistic hybrid encryption** following industry best practices (like TLS, Signal, WhatsApp):
+| Layer | Algorithms |
+|-------|------------|
+| Key encapsulation (hybrid) | **ML-KEM-768** (FIPS 203) + **X25519** (classical ECDH) → HKDF → AES key |
+| Bulk encryption | **AES-256-GCM** |
+| Digital signatures | **ML-DSA-65** (FIPS 204) on sync + publish intents |
+| Transport / session | TLS (e.g. Traefik), JWT + nonce/replay guards |
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  HYBRID ENCRYPTION FLOW                                                      │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  1. KEY ENCAPSULATION (KEM)                                                  │
-│     ├── RSA-2048 (Classical - VULNERABLE to Shor's Algorithm)               │
-│     └── ML-KEM-768 (Post-Quantum - QUANTUM SAFE)                            │
-│         └── Encapsulates random AES-256 key                                 │
-│                                                                              │
-│  2. BULK DATA ENCRYPTION                                                     │
-│     └── AES-256-GCM (Symmetric - Fast for large data)                       │
-│         └── Encrypts documents, files, messages                             │
-│                                                                              │
-│  3. DIGITAL SIGNATURE (Authentication)                                       │
-│     ├── RSA-2048 (Classical - VULNERABLE to Shor's Algorithm)               │
-│     └── ML-DSA-65 (Post-Quantum - QUANTUM SAFE)                             │
-│         └── Signs the encrypted package                                     │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Why This Matters
-
-| Component | Classical | Post-Quantum | Purpose |
-|-----------|-----------|--------------|---------|
-| **KEM** | RSA-2048 ❌ | ML-KEM-768 ✅ | Securely exchange AES key |
-| **Bulk Encryption** | AES-256-GCM | AES-256-GCM | Fast encryption for data |
-| **Signature** | RSA-2048 ❌ | ML-DSA-65 ✅ | Verify authenticity |
-
-❌ = Vulnerable to quantum attacks (Shor's Algorithm)
-✅ = Quantum-resistant (Lattice-based)
+Classical-only RSA/ECC sync envelopes are **rejected** when `ENFORCE_PQC_ONLY=true`.
 
 ---
 
-## 🔑 Authentication
+## Why this exists
 
-### Supported Methods
+Most website builders store or sync design state with classical crypto (or none). **Harvest Now, Decrypt Later (HNDL)** attackers can archive ciphertext today and break RSA/ECC later with quantum algorithms (e.g. Shor).
 
-| Method | Status | Use Case |
-|--------|--------|----------|
-| **Form-based Login** | ✅ Active | Traditional username/password |
-| **OAuth 2.0** | 🔧 Ready | Google, GitHub social login |
-| **JWT Tokens** | ✅ Active | API authentication |
+PQC Website IDE aims to be a practical, open toolkit for:
 
-### OAuth 2.0 Setup (Optional)
-
-To enable social login with Google or GitHub:
-
-1. **Get OAuth 2.0 Credentials:**
-   - Google: [Google Cloud Console](https://console.cloud.google.com/)
-   - GitHub: [GitHub Developer Settings](https://github.com/settings/developers)
-
-2. **Configure in `gov-portal/src/main/resources/application.properties`:**
-
-```properties
-oauth2.enabled=true
-
-# Google OAuth 2.0
-spring.security.oauth2.client.registration.google.client-id=YOUR_CLIENT_ID
-spring.security.oauth2.client.registration.google.client-secret=YOUR_SECRET
-spring.security.oauth2.client.registration.google.scope=email,profile
-
-# GitHub OAuth 2.0
-spring.security.oauth2.client.registration.github.client-id=YOUR_CLIENT_ID
-spring.security.oauth2.client.registration.github.client-secret=YOUR_SECRET
-spring.security.oauth2.client.registration.github.scope=user:email,read:user
-```
+1. **Generating** simple websites (templates, presets, WYSIWYG canvas, SEO-ready export).
+2. **Protecting** editor ↔ server data with **KEM + signatures** under new NIST PQC standards.
+3. **Staying compatible** with current practice: AES-GCM content encryption, hybrid classical+PQC KEM, signed intents, zero-trust API checks.
 
 ---
 
-## 📁 Project Structure
+## UI (from automated Selenium demo)
 
-```
-PQC-CyberSec-Simulator/
-├── crypto-lib/           # Cryptography Library (ML-DSA, ML-KEM, RSA, AES)
-├── gov-portal/           # Government Portal with Web UI (Port 8181)
-├── secure-messaging/     # Encrypted Messaging Service (Port 8182)
-├── hacker-console/       # Hacker Attack Simulation (Port 8183)
-├── quantum-simulator/    # Python cuQuantum GPU Quantum Simulator (Port 8184)
-├── ui-tests/             # Selenium UI Tests (Four-Panel Demo)
-├── docker-compose.yml    # Docker deployment configuration
-└── pom.xml               # Parent Maven configuration
-```
+Light-first IDE shell — templates, canvas, inspector, hybrid PQC status:
 
----
+![IDE shell — light theme](docs/images/01-shell.png)
 
-## 🚀 Quick Start Guide
+Blog template on the page-paper canvas:
 
-### Prerequisites
+![Builder with Blog template](docs/images/03-builder-blog.png)
 
-| Requirement | Version | Required | Notes |
-|-------------|---------|----------|-------|
-| **Java JDK** | 21+ | ✅ Required | For all Java services |
-| **Maven** | 3.9+ | ✅ Required | Build tool |
-| **Chrome Browser** | Latest | ✅ Required | For Selenium UI tests |
-| **Python** | 3.10+ | ⚠️ Optional | For quantum simulator with GPU |
-| **Docker Desktop** | Latest | ⚠️ Optional | For containerized deployment |
-| **NVIDIA GPU** | RTX 20 series+ | ⚠️ Optional | For GPU quantum simulation |
+PQC Security panel (ML-KEM + X25519 hybrid · ML-DSA):
 
-**Note:** The fully automated demo (`run-demo.bat`/`run-demo.sh`) runs everything **without Docker** for simplicity. Docker is only needed if you prefer containerized deployment.
+![PQC Security panel](docs/images/04-pqc-panel.png)
+
+Live wire proof overlay after Save (algorithms asserted on the sync envelope):
+
+![Hybrid PQC sync wire proof](docs/images/06b-sync-pqc-assert.png)
+
+Publish → Preview:
+
+![Preview after publish](docs/images/07-preview.png)
+
+After Export ZIP:
+
+![After export](docs/images/08-after-export.png)
+
+More step screenshots: [`apps/e2e/scripts/demo-shots/selenium/`](apps/e2e/scripts/demo-shots/selenium/)  
+Machine-readable evidence: [`pqc-evidence.json`](apps/e2e/scripts/demo-shots/selenium/pqc-evidence.json)
 
 ---
 
-## 📦 Installation & Setup
+## Features (current)
 
-### Quick Start (Fastest - No Docker Required!)
+- Visual builder: Templates, section presets (Hero / Nav / Footer / Form), style chips, undo/redo
+- Light default theme + Dark toggle (`localStorage`)
+- Hybrid PQC save path: Worker → API gateway → Go crypto-service
+- Publish with ML-DSA-signed intent; Preview modal
+- Export ZIP: HTML + CSS + SEO meta / Open Graph + `robots.txt` + `sitemap.xml`
+- Security tests for HNDL (accept hybrid PQC; reject classical-only / forgery)
+
+---
+
+## Port map
+
+| Port | Service |
+|------|---------|
+| **4000** | API gateway (`/api/*`, `/demo-api/*`) |
+| **4001** | React IDE (Vite or Docker nginx; proxies `/api`) |
+| **4010** | Compiled static demo (tests) |
+| **4081** | Go crypto microservice |
+| 5432 | PostgreSQL (Docker) |
+
+> On some Windows Docker hosts, `:4000` may not bind. Use **http://127.0.0.1:4001** — nginx proxies `/api`. For security tests: `API_URL=http://127.0.0.1:4001`.
+
+---
+
+## Quick start
+
+### Local
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/yourusername/PQC-CyberSec-Simulator.git
-cd PQC-CyberSec-Simulator
+pnpm install
+pnpm --filter @pqc/shared build
 
-# 2. Build all modules
-mvn clean install -DskipTests
+# Terminal 1
+cd apps/crypto-service && go mod tidy && go run .
 
-# 3. Run the fully automated demo!
-.\run-demo.bat          # Windows
-./run-demo.sh           # Linux/Mac
+# Terminal 2
+cd apps/api-gateway && pnpm dev
+
+# Terminal 3
+cd apps/web && pnpm dev
 ```
 
-That's it! The demo will automatically:
-- ✅ Start all required services (Quantum Simulator, Gov-Portal, Hacker Console)
-- ✅ Execute all 4 cryptographic scenarios first (automated Selenium)
-- ✅ Open browser panels for manual interaction after tests
-- ✅ Show real-time quantum attacks
-- ✅ Keep services running so you can interact, re-test, and inspect logs
+Open **http://localhost:4001**.
 
-**⏱️ Total time:** 6-8 minutes (fully automated, zero interaction)
+### Docker
+
+```bash
+cp infra/.env.example infra/.env
+docker compose -f infra/docker-compose.yml up -d --build
+```
+
+IDE: **http://127.0.0.1:4001/**
 
 ---
 
-### Advanced Setup Options
+## Demo walkthrough
 
-#### Option 1: With GPU Quantum Simulation (Recommended)
+1. Open the IDE — wait for badge **ML-KEM + X25519 hybrid**.
+2. **Templates** → **Blog** (or top-bar Load template).
+3. Edit content / SEO in the Inspector; optional Hero preset.
+4. **Save** — hybrid encrypt + ML-DSA sign; badge → *Saved — hybrid PQC verified*.
+5. **Publish** — signed intent; Preview opens.
+6. **Export** — download ZIP (crawlable HTML + sitemap/robots).
 
-For **real GPU-accelerated quantum circuit simulation**:
-
-```bash
-cd quantum-simulator
-
-# Create virtual environment
-python -m venv venv
-venv\Scripts\activate      # Windows
-# source venv/bin/activate  # Linux/Mac
-
-# Install dependencies
-pip install -r requirements.txt
-
-# For GPU support (requires CUDA 12)
-pip install cupy-cuda12x cuquantum-python-cu12
-```
-
-Then run the demo as usual - it will automatically detect and use your GPU!
-
-**GPU Status Check:**
-```bash
-cd quantum-simulator
-python -c "import cupy as cp; print(f'GPU: {cp.cuda.Device().name}')"
-```
-
-#### Option 2: With Docker (For PostgreSQL Production Setup)
-
-If you need persistent database storage:
+### Headed Selenium (screenshots + wire proof)
 
 ```bash
-# Start PostgreSQL container
-docker-compose up -d postgres
-
-# Wait for database to be ready
-docker-compose logs postgres
-
-# Build and start all services in Docker
-docker-compose up -d
+python apps/e2e/scripts/selenium_demo.py
 ```
 
-**Services in Docker:**
-
-| Service | URL | Description |
-|---------|-----|-------------|
-| **Government Portal** | http://localhost:8181 | Web UI for citizens & officers |
-| **Secure Messaging** | http://localhost:8182 | Encrypted communications API |
-| **PostgreSQL** | localhost:5432 | Persistent database |
-
----
-
-### Step-by-Step Manual Setup
-
-For development or troubleshooting:
-
----
-
-## 👥 Demo User Accounts
-
-| Role | Username | Password | Description |
-|------|----------|----------|-------------|
-| 👤 **Citizen** | `john.citizen` | `Citizen@2024!` | Regular citizen account |
-| 👤 **Citizen** | `emily.chen` | `Citizen@2024!` | Another citizen account |
-| 👮 **Officer** | `officer` | `Officer@2024!` | Government officer |
-| ⚙️ **Admin** | `admin` | `Admin@PQC2024!` | System administrator |
-
----
-
-## 🎮 Running the Demo
-
-### 🚀 **FULLY AUTOMATED DEMO** (Recommended - Zero User Input!)
-
-The easiest way to run the complete demo is with our **fully automated script** that handles everything:
-
-**Windows:**
-```bash
-.\run-demo.bat
-```
-
-**Linux/Mac:**
-```bash
-./run-demo.sh
-```
-
-**What happens automatically:**
-1. ✅ Cleans up any existing processes
-2. ✅ Starts Quantum Simulator (GPU-accelerated)
-3. ✅ Starts Government Portal (port 8181)
-4. ✅ Starts Hacker Console (port 8183)
-5. ✅ Runs automated Selenium test demonstrating all 4 crypto scenarios
-6. ✅ Opens 4 browser panels in 2x2 grid for manual interaction:
-   - **TOP-LEFT**: Citizen Portal
-   - **TOP-RIGHT**: Officer Portal
-   - **BOTTOM-LEFT**: Hacker Harvest Dashboard
-   - **BOTTOM-RIGHT**: Hacker Decrypt Panel
-7. ✅ Keeps services running so you can continue interacting manually
-
-**⏱️ Total Duration:** ~6-8 minutes (fully automated)  
-**🎯 User Action Required:** NONE - Just watch!
-
----
-
-### 🎯 Four-Panel Visual Demo
-
-The automated demo shows **four Chrome browser panels simultaneously** in a 2×2 grid demonstrating realistic HNDL (Harvest Now, Decrypt Later) attacks with **4 different cryptographic scenarios**:
-
-| Panel | User/View | Description |
-|-------|-----------|-------------|
-| **TOP-LEFT** | 👤 Citizen | Regular citizen using government services |
-| **TOP-RIGHT** | 👮 Officer | Government officer reviewing applications |
-| **BOTTOM-LEFT** | 🕵️ Hacker Harvest | Threat actor intercepting encrypted traffic |
-| **BOTTOM-RIGHT** | ⚛️ Hacker Decrypt | Real-time quantum attack execution & results |
-
-**4 Crypto Scenarios Tested (Hybrid Encryption):**
-
-| # | KEM (Key Exchange) | Bulk Data | Signature | Result |
-|---|-------------------|-----------|-----------|--------|
-| 1 | RSA-2048 ❌ | AES-256-GCM | RSA-2048 ❌ | 🔴 FULLY VULNERABLE |
-| 2 | ML-KEM-768 ✅ | AES-256-GCM | ML-DSA-65 ✅ | 🟢 FULLY QUANTUM-SAFE |
-| 3 | RSA-2048 ❌ | AES-256-GCM | ML-DSA-65 ✅ | 🟡 ENCRYPTION VULNERABLE |
-| 4 | ML-KEM-768 ✅ | AES-256-GCM | RSA-2048 ❌ | 🟡 SIGNATURE VULNERABLE |
-
-**Note:** All scenarios use AES-256-GCM for bulk data encryption (industry standard). The quantum vulnerability comes from the **KEM** (key exchange) and **Signature** algorithms.
-
----
-
-### 📋 Manual Setup (Alternative)
-
-If you prefer manual control or need to troubleshoot, follow these steps:
-
-**Prerequisites:** Ensure ALL services are running:
+### Security / HNDL tests
 
 ```bash
-# 1. Start Docker services (gov-portal, secure-messaging, postgres)
-docker-compose up -d
-
-# 2. Start Quantum Simulator (Terminal 1)
-cd quantum-simulator
-python quantum_service.py
-
-# 3. Start Hacker Console (Terminal 2)
-cd hacker-console
-mvn spring-boot:run -Dspring-boot.run.profiles=standalone
-
-# 4. Verify all services are running
-# - Gov Portal: http://localhost:8181 
-# - Hacker Console: http://localhost:8183
-# - Quantum Sim: http://localhost:8184
+API_URL=http://127.0.0.1:4001 pnpm security-tests
 ```
-
-**Run the Four-Panel Selenium Demo:**
 
 ```bash
-cd ui-tests
-mvn test -Dtest=ComprehensiveCryptoTest
-```
-
-**⏱️ Test Duration:** ~5-6 minutes  
-**📺 Display:** Four Chrome windows will appear in 2x2 grid
-
-### What the Demo Shows
-
-The automated demo executes **4 complete cryptographic scenarios** using **industry-standard hybrid encryption** showing all combinations of classical and quantum-safe algorithms:
-
-#### **Scenario 1: RSA-KEM + AES-256 + RSA-Sig** 🔴 FULLY VULNERABLE
-- **Citizen** submits Car License with RSA-2048 key encapsulation + AES-256-GCM bulk encryption + RSA-2048 signature
-- **Hacker** intercepts ENCRYPTED packets (cannot read AES-encrypted data directly)
-- **Quantum Attack** breaks RSA-KEM, recovers AES key → decrypts data; breaks RSA signature
-- **Result:** Complete data breach - all information exposed
-
-#### **Scenario 2: ML-KEM + AES-256 + ML-DSA** 🟢 FULLY QUANTUM-SAFE
-- **Citizen** submits Passport Application with ML-KEM-768 key encapsulation + AES-256-GCM bulk encryption + ML-DSA-65 signature
-- **Hacker** intercepts quantum-resistant packets
-- **Quantum Attack** FAILS on both KEM and signature → AES key unrecoverable
-- **Result:** Data remains fully protected - no breach possible
-
-#### **Scenario 3: RSA-KEM + AES-256 + ML-DSA** 🟡 ENCRYPTION VULNERABLE
-- **Citizen** submits Birth Certificate with RSA-2048 key encapsulation + AES-256-GCM bulk encryption + ML-DSA-65 signature
-- **Hacker** intercepts mixed-security packets
-- **Quantum Attack** breaks RSA-KEM → recovers AES key → decrypts data; signature remains valid
-- **Result:** Partial breach - data exposed but authenticity verified
-
-#### **Scenario 4: ML-KEM + AES-256 + RSA-Sig** 🟡 SIGNATURE VULNERABLE
-- **Citizen** submits Medical Records with ML-KEM-768 key encapsulation + AES-256-GCM bulk encryption + RSA-2048 signature
-- **Hacker** intercepts mixed-security packets
-- **Quantum Attack** breaks RSA signature; ML-KEM holds → AES key unrecoverable
-- **Result:** Partial breach - data protected but authenticity compromised
-
----
-
-### Real-Time Visual Demonstration
-
-**BOTTOM-LEFT Panel (Hacker Harvest)** shows intercepted packets:
-```
-🔒 ENCRYPTED PAYLOAD CAPTURED:
-   Document: Car License
-   KEM: RSA-2048 ⚠️ QUANTUM VULNERABLE
-   Symmetric: AES-256-GCM ✅ (key at risk via KEM)
-   Signature: RSA-2048 ⚠️ QUANTUM VULNERABLE
-   
-   Raw Hex: 3F8CD0C0D3BC1822 BDDC9DB950F71F4D...
-```
-
-**BOTTOM-RIGHT Panel (Hacker Decrypt)** shows quantum attack results:
-```
-╔═══════════════════════════════════════════════════════╗
-║  ⚛️ QUANTUM ATTACK RESULT - SCENARIO 1                   ║
-╠═══════════════════════════════════════════════════════════╣
-║  💔 RSA-2048 KEM BROKEN BY SHOR'S ALGORITHM              ║
-║  🔓 AES-256 KEY RECOVERED → BULK DATA DECRYPTED          ║
-║                                                           ║
-║  📋 DECRYPTED DATA:                                       ║
-║  👤 Name: John Michael Citizen                            ║
-║  📅 DOB: 1985-06-15                                       ║
-║  🏠 Address: 1247 Oak Street, Springfield, IL             ║
-║  🚗 License: DL-8472619                                   ║
-╚═══════════════════════════════════════════════════════╝
-```
-
-### Demo Summary Output
-
-After completing all 4 scenarios (using hybrid encryption), the demo shows:
-
-```
-╔════════════════════════════════════════════════════════════════════════════════╗
-║              PQC COMPREHENSIVE CRYPTOGRAPHY TEST COMPLETE                      ║
-║                  (Hybrid Encryption: KEM + AES-256 + Signature)                ║
-╠════════════════════════════════════════════════════════════════════════════════╣
-║                                                                                ║
-║  SCENARIO 1: RSA-KEM + AES-256 + RSA-Sig (All Classical)                      ║
-║     KEM:        💔 BROKEN (RSA-2048 factored by Shor's Algorithm)             ║
-║     AES Key:    🔓 RECOVERED (via broken KEM)                                 ║
-║     Signature:  💔 BROKEN (RSA-2048 signature forged)                         ║
-║     Result:     🔴 FULLY VULNERABLE - Complete data breach                    ║
-║                                                                                ║
-║  SCENARIO 2: ML-KEM + AES-256 + ML-DSA (All Post-Quantum)                     ║
-║     KEM:        🛡️ PROTECTED (Lattice problem resistant)                      ║
-║     AES Key:    🔐 SECURE (KEM unbroken)                                      ║
-║     Signature:  🛡️ PROTECTED (No known quantum attack)                        ║
-║     Result:     🟢 FULLY QUANTUM-SAFE - Data fully protected                  ║
-║                                                                                ║
-║  SCENARIO 3: RSA-KEM + AES-256 + ML-DSA (Mixed - PQC Signature)               ║
-║     KEM:        💔 BROKEN (RSA-2048 factored)                                 ║
-║     AES Key:    🔓 RECOVERED (via broken KEM)                                 ║
-║     Signature:  🛡️ PROTECTED (ML-DSA quantum-resistant)                       ║
-║     Result:     🟡 MIXED SECURITY - Encryption compromised                    ║
-║                                                                                ║
-║  SCENARIO 4: ML-KEM + AES-256 + RSA-Sig (Mixed - PQC Encryption)              ║
-║     KEM:        🛡️ PROTECTED (ML-KEM quantum-resistant)                       ║
-║     AES Key:    🔐 SECURE (KEM unbroken)                                      ║
-║     Signature:  💔 BROKEN (RSA-2048 signature forged)                         ║
-║     Result:     🟡 MIXED SECURITY - Signature compromised                     ║
-║                                                                                ║
-╠════════════════════════════════════════════════════════════════════════════════╣
-║  ✅ ALL TESTS PASSED                                                           ║
-║  ⚛️ Total Quantum Attacks: 8 (4 KEM + 4 signature)                            ║
-║  🔐 Quantum-Safe Algorithms: 100% protection rate                             ║
-║  💔 Classical Algorithms: 0% protection rate                                  ║
-╚════════════════════════════════════════════════════════════════════════════════╝
+pnpm test:unit:coverage
+pnpm test:e2e
 ```
 
 ---
 
-## 🔐 Cryptographic Algorithms
+## Architecture (short)
 
-### ✅ Quantum-Safe (NIST FIPS 203/204)
+| Component | Tech |
+|-----------|------|
+| Frontend | React 19, Vite, Tailwind, Zustand, @dnd-kit |
+| Browser crypto | Web Worker, `@noble/post-quantum`, `@noble/curves` (X25519) |
+| API | Fastify (auth, sync, compile, export) |
+| Crypto service | Go + Cloudflare CIRCL + X25519/HKDF |
+| Desktop (optional) | Tauri 2 |
 
-| Algorithm | Type | Security Level |
-|-----------|------|----------------|
-| **ML-KEM** (Kyber768) | Key Encapsulation | 192-bit quantum |
-| **ML-DSA** (Dilithium3) | Digital Signature | 128-bit quantum |
-
-### ⚠️ Classical (Vulnerable to Quantum)
-
-| Algorithm | Type | Quantum Threat |
-|-----------|------|----------------|
-| **RSA-2048** | Key Encapsulation/Signature | ❌ Broken by Shor's Algorithm |
-| **AES-256** | Symmetric Bulk Encryption | ✅ Safe (key secured by KEM) |
-
-**Note:** AES-256 itself is quantum-resistant (Grover's only halves effective key bits to 128-bit). The vulnerability comes from how the AES key is exchanged (the KEM algorithm).
+Docs: [docs/architecture.md](docs/architecture.md) · [docs/crypto-api.md](docs/crypto-api.md) · [docs/testing.md](docs/testing.md) · [docs/sovereign-deploy.md](docs/sovereign-deploy.md)
 
 ---
 
-## 🧪 Running Tests
+## Project structure
 
-### Quick Test Commands
-
-| Test Type | Command | Description |
-|-----------|---------|-------------|
-| **All Tests** | `mvn test` | Run all unit tests |
-| **UI Demo** | `cd ui-tests && mvn test -Dtest=PqcSecurityDemoTest` | Run 3-panel demo |
-| **Single Module** | `mvn test -pl gov-portal` | Test specific module |
-| **Skip Tests** | `mvn install -DskipTests` | Build without tests |
-
-### Full Three-Panel UI Demo Test
-
-```bash
-# Step 1: Ensure services are running
-docker-compose up -d
-cd quantum-simulator && python quantum_service.py &
-cd hacker-console && mvn spring-boot:run -Dspring-boot.run.profiles=standalone &
-
-# Step 2: Run UI test (wait for services ~30 seconds)
-cd ui-tests
-mvn test -Dtest=PqcSecurityDemoTest
 ```
-
-**Expected Output:**
-```
-[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0
-[INFO] BUILD SUCCESS
-[INFO] Total time:  04:19 min
-```
-
-### Test Descriptions
-
-| Test # | Name | What It Tests |
-|--------|------|---------------|
-| 1 | Initialize Panels | Opens 3 Chrome windows, connects to services |
-| 2 | Authentication | Citizen & Officer login |
-| 3 | RSA Submission | Car license with RSA-2048 (vulnerable) |
-| 4 | Officer Review | Officer reviews pending applications |
-| 5 | ML-KEM Submission | Tax filing with ML-KEM-768 (quantum-safe) |
-| 6 | Quantum Attack | Shor's & Grover's algorithms execution |
-| 7 | Tax Processing | Officer processes quantum-safe document |
-| 8 | Summary | Final security demonstration report |
-
-### All Unit Tests
-
-```bash
-mvn test
-```
-
-### UI Demo Test Only
-
-```bash
-cd ui-tests
-mvn test -Dtest=PqcSecurityDemoTest
-```
-
-### Test with Specific Browser
-
-```bash
-cd ui-tests
-mvn test -Dtest=PqcSecurityDemoTest -Dwebdriver.chrome.driver=/path/to/chromedriver
+apps/web              # React IDE (:4001)
+apps/api-gateway      # Fastify API (:4000)
+apps/crypto-service   # Go PQC microservice (:4081)
+apps/security-tests   # HNDL / forgery / XSS audits
+apps/e2e              # Playwright + Selenium demos
+apps/desktop          # Tauri wrapper
+packages/shared       # AST + hybrid crypto payload schemas
+docs/                 # Architecture + demo images
+infra/                # Docker Compose + Traefik
+archive/              # Legacy PQC cyber-attack simulator (education)
 ```
 
 ---
 
-## 📡 API Endpoints
+## Contributing & roadmap
 
-### Government Portal (8181)
+This repository is **early / in development**. Expected areas of work:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/login` | Login page |
-| GET | `/dashboard` | User dashboard |
-| GET | `/services/car-license` | Car license form |
-| POST | `/services/car-license` | Submit application |
-| GET | `/services/tax-filing` | Tax filing form |
-| POST | `/services/tax-filing` | Submit tax return |
-| GET | `/officer/review/{id}` | Review document |
-| POST | `/officer/approve/{id}` | Approve document |
+- Hardening hybrid crypto UX and audit logging
+- Broader browser QA (Chrome, Firefox, Safari, Edge)
+- Richer templates / multi-page sites
+- Production auth beyond local `dev-register`
 
-### Hacker Console (8183)
+Issues and PRs are welcome. Please do **not** commit secrets (`.env`, JWT keys, crypto service secrets).
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/hacker/gpu` | GPU information |
-| POST | `/api/hacker/harvest/transactions` | Intercept data |
-| POST | `/api/hacker/quantum-attack` | Execute attack |
-| GET | `/api/hacker/harvested` | List captured data |
+## License
 
-### Quantum Simulator (8184)
+MIT — see [LICENSE](LICENSE).
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/quantum/status` | Service status |
-| POST | `/api/quantum/attack/rsa` | Shor's algorithm |
-| POST | `/api/quantum/attack/lattice` | Lattice attack |
+## Related archive
 
----
+The original PQC cyber-attack education simulator lives under:
 
-## 🗄️ Database Configuration
-
-| Setting | Value |
-|---------|-------|
-| **Host** | localhost |
-| **Port** | 5432 |
-| **Database** | pqc_cybersec |
-| **Username** | pqc_admin |
-| **Password** | PqcSecure2024! |
-
----
-
-## ⚠️ Troubleshooting
-
-### Common Issues
-
-| Problem | Solution |
-|---------|----------|
-| **Port already in use** | Stop conflicting service or check Docker containers |
-| **Services not starting** | Check `docker-compose logs` for errors |
-| **Database connection refused** | Ensure PostgreSQL is running: `docker-compose up -d postgres` |
-| **Chrome not found** | Install Chrome or update WebDriver |
-| **Hacker console can't connect** | Verify services are running on correct ports |
-| **Quantum service unavailable** | Run `python quantum_service.py` manually |
-
-### UI Test Issues
-
-| Problem | Solution |
-|---------|----------|
-| **Browsers don't appear** | Test runs in headed mode by default - check display |
-| **Test fails at login** | Verify gov-portal is running: `curl http://localhost:8181` |
-| **Quantum attack shows simulation** | Start Python quantum service on port 8184 |
-| **"No such element" error** | Services may not be ready - increase sleep times |
-| **ChromeDriver version mismatch** | Update Chrome or let WebDriverManager auto-download |
-
-### Verify Services Are Running
-
-```bash
-# Check all ports are listening
-# Windows PowerShell:
-Get-NetTCPConnection -LocalPort 8181,8182,8183,8184 -ErrorAction SilentlyContinue | Format-Table LocalPort,State
-
-# Linux/Mac:
-netstat -tlnp | grep -E '8181|8182|8183|8184'
-
-# Expected output: All ports should show "Listen" state
-```
-
-### Check Service Health
-
-```bash
-# Gov Portal
-curl http://localhost:8181/login
-
-# Hacker Console
-curl http://localhost:8183/api/hacker/gpu
-
-# Quantum Simulator
-curl http://localhost:8184/api/quantum/status
-```
-
-### Viewing Logs
-
-```bash
-# Docker service logs
-docker-compose logs -f gov-portal
-docker-compose logs -f secure-messaging
-
-# Hacker console logs (if running via Maven)
-# Logs appear in terminal
-```
-
-### Resetting the Demo
-
-```bash
-# Stop all services
-docker-compose down
-
-# Remove database volume (fresh start)
-docker-compose down -v
-
-# Restart everything
-docker-compose up -d
-```
-
----
-
-## 🏗️ Building for Production
-
-### Build JAR Files
-
-```bash
-mvn clean package -DskipTests
-
-# JARs created:
-# - gov-portal/target/gov-portal-1.0.0.jar
-# - secure-messaging/target/secure-messaging-1.0.0.jar
-# - hacker-console/target/hacker-console-1.0.0.jar
-```
-
-### Build Docker Images
-
-```bash
-docker-compose build
-```
-
----
-
-## 📚 Educational Purpose
-
-This simulator demonstrates:
-
-1. **Shor's Algorithm** - How quantum computers break RSA encryption
-2. **Grover's Algorithm** - How quantum computers reduce symmetric key security
-3. **HNDL Attack** - Why "Harvest Now, Decrypt Later" is a real threat
-4. **PQC Migration** - Why organizations must migrate to quantum-safe cryptography NOW
-
-### Realistic HNDL Attack Simulation
-
-The demo shows a **realistic** Harvest Now, Decrypt Later attack flow:
-
-| Phase | Action | Data Shown |
-|-------|--------|------------|
-| **1. Harvest** | Intercept encrypted packets | Raw hex encrypted data (unreadable) |
-| **2. Store** | Save for future attack | Encrypted payload + cipher metadata |
-| **3. Attack** | Run quantum algorithms | Shor's algorithm progress (4099 qubits) |
-| **4. Decrypt** | Extract plaintext (RSA only) | Decrypted personal information |
-| **5. Fail** | Attack ML-KEM | "CANNOT DECRYPT" message |
-
-### GPU Quantum Simulation
-
-When running with NVIDIA GPU:
-- **Detected GPU:** NVIDIA GeForce RTX 4060 Laptop GPU (8GB VRAM)
-- **Max Qubits:** 28 (limited by GPU memory)
-- **Shor's Algorithm:** Requires ~4099 qubits for RSA-2048 (simulated)
-
-### NIST Post-Quantum Standards
-
-- **FIPS 203** - ML-KEM (Kyber) - Key Encapsulation
-- **FIPS 204** - ML-DSA (Dilithium) - Digital Signatures
-- **FIPS 205** - SLH-DSA (SPHINCS+) - Stateless Hash Signatures
-
----
-
-## 📜 License
-
-Open Source - Educational Use Only
-
-**⚠️ Disclaimer:** This simulation is for educational purposes only. The "hacker" functionality demonstrates real security threats but should never be used maliciously.
-
----
-
-## 🙏 Credits
-
-- **Bouncy Castle** - PQC cryptography library (v1.79)
-- **NIST** - Post-Quantum Cryptography standards
-- **Spring Boot 3.5** - Microservices framework
-- **Selenium** - UI testing framework
-- **cuQuantum** - NVIDIA quantum simulation SDK
+**[archive/pqc-cybersec-simulator/](archive/pqc-cybersec-simulator/)**

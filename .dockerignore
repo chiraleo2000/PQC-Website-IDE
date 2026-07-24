@@ -1,0 +1,23 @@
+# Reduce build context size and exclude secrets
+.git
+.github
+**/.cursor
+**/node_modules
+**/dist
+**/target
+**/.turbo
+**/coverage
+**/*.log
+.env
+.env.*
+!.env.example
+!infra/.env.example
+apps/e2e
+apps/desktop
+archive
+hacker-console
+gov-portal
+quantum-simulator
+secure-messaging
+**/*.md
+!apps/**/README.md

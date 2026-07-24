@@ -1,0 +1,11 @@
+# Traefik dynamic config — TLS 1.3 minimum (outer envelope for inner PQC payloads)
+tls:
+  options:
+    default:
+      minVersion: VersionTLS13
+      # false for local self-signed / IP access; enable in production PKI
+      sniStrict: false
+      cipherSuites:
+        - TLS_AES_128_GCM_SHA256
+        - TLS_AES_256_GCM_SHA384
+        - TLS_CHACHA20_POLY1305_SHA256

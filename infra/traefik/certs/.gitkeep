@@ -1,0 +1,4 @@
+# Mount TLS 1.3 certificates here for Traefik:
+#   fullchain.pem
+#   privkey.pem
+# Air-gapped: use org PKI or mkcert for local sovereign testing.

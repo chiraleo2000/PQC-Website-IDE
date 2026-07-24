@@ -1,0 +1,164 @@
+# Sovereign deployment stack — TLS 1.3 at Traefik, PQC crypto on internal network.
+# Usage:
+#   cp infra/.env.example infra/.env   # set secrets
+#   docker compose -f infra/docker-compose.yml up -d --build
+# Dev direct ports: docker compose -f infra/docker-compose.yml --profile dev up -d --build
+
+name: pqc-sovereign
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pqc_ide}
+      POSTGRES_USER: ${POSTGRES_USER:-pqc_ide}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pqc_ide_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pqc_ide} -d ${POSTGRES_DB:-pqc_ide}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    security_opt:
+      - no-new-privileges:true
+
+  crypto-service:
+    build:
+      context: ../apps/crypto-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      CRYPTO_PORT: "4081"
+      CRYPTO_SERVICE_SECRET: ${CRYPTO_SERVICE_SECRET:?set CRYPTO_SERVICE_SECRET}
+    networks:
+      - internal
+    read_only: true
+    tmpfs:
+      - /tmp:size=8M,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  api-gateway:
+    build:
+      context: ..
+      dockerfile: apps/api-gateway/Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: "4000"
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production-min-32-chars}
+      CRYPTO_SERVICE_URL: http://crypto-service:4081
+      CRYPTO_SERVICE_SECRET: ${CRYPTO_SERVICE_SECRET:-internal-crypto-shared-secret}
+      CRYPTO_USE_GO: ${CRYPTO_USE_GO:-true}
+      ENFORCE_PQC_ONLY: ${ENFORCE_PQC_ONLY:-true}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-pqc_ide}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-pqc_ide}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
+      SYNC_RATE_LIMIT_MAX: ${SYNC_RATE_LIMIT_MAX:-30}
+      MAX_PAYLOAD_BYTES: ${MAX_PAYLOAD_BYTES:-2097152}
+      NONCE_TTL_MS: ${NONCE_TTL_MS:-300000}
+      DEMO_CORS_ORIGINS: ${DEMO_CORS_ORIGINS:-https://localhost}
+      GIT_OPS_ENABLED: ${GIT_OPS_ENABLED:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      crypto-service:
+        condition: service_started
+    ports:
+      - "4000:4000"
+    networks:
+      - internal
+    read_only: true
+    tmpfs:
+      - /tmp:size=32M,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Same-origin /api via nginx reverse proxy behind Traefik
+        VITE_API_URL: ""
+    restart: unless-stopped
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    ports:
+      - "4001:8080"
+    networks:
+      - edge
+      - internal
+    read_only: true
+    tmpfs:
+      # mode 1777: nginx USER cannot mkdir client_temp on a root-owned tmpfs
+      - /var/cache/nginx:size=16M,mode=1777
+      - /var/run:size=1M,mode=1777
+      - /tmp:size=8M,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.pqc-web.rule=Host(`${PQC_DOMAIN:-localhost}`)
+      - traefik.http.routers.pqc-web.entrypoints=websecure
+      - traefik.http.routers.pqc-web.tls=true
+      - traefik.http.routers.pqc-web.tls.options=default@file
+      - traefik.http.services.pqc-web.loadbalancer.server.port=8080
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  traefik:
+    profiles:
+      - tls-edge
+    image: traefik:v3.2
+    restart: unless-stopped
+    command:
+      - "--log.level=INFO"
+      - "--api.dashboard=false"
+      # File provider is the portable path (Windows Docker Desktop often cannot mount docker.sock).
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.tls=true"
+      - "--entrypoints.websecure.http.tls.options=default@file"
+    ports:
+      - "443:443"
+    volumes:
+      - ./traefik/dynamic:/etc/traefik/dynamic:ro
+      - ./traefik/certs:/certs:ro
+    networks:
+      - edge
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=16M,mode=1777
+
+networks:
+  internal:
+    driver: bridge
+    internal: true
+  edge:
+    driver: bridge
+    name: pqc-sovereign_edge
+
+volumes:
+  postgres_data:
+    driver: local

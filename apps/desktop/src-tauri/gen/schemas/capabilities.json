@@ -1,0 +1,1 @@
+{"encrypted-storage-capability":{"identifier":"encrypted-storage-capability","description":"Main window — minimal core APIs plus encrypted project storage IPC only","local":true,"windows":["main"],"permissions":["core:default","allow-encrypted-storage"]}}
