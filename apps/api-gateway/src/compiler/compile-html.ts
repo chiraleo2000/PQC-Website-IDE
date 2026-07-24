@@ -53,17 +53,8 @@ function compileAttrs(node: AstNode): string[] {
     }
     if (!ALLOWED_ATTRS.has(key)) continue;
 
-    if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") continue;
-    const str = String(value);
-    assertSafeContent(str, key);
-
-    if (key === "class") {
-      attrs.push(`class="${sanitizeClassName(str)}"`);
-    } else if (key === "href" || key === "src") {
-      attrs.push(`${key}="${sanitizeText(sanitizeUrl(str, key))}"`);
-    } else {
-      attrs.push(`${key}="${sanitizeText(str)}"`);
-    }
+    const attr = formatAllowedAttr(key, value);
+    if (attr) attrs.push(attr);
   }
 
   const dataDemo = asPropString(node.props.dataDemo);
@@ -72,6 +63,19 @@ function compileAttrs(node: AstNode): string[] {
   }
 
   return attrs;
+}
+
+function formatAllowedAttr(key: string, value: unknown): string | null {
+  if (typeof value !== "string" && typeof value !== "number" && typeof value !== "boolean") {
+    return null;
+  }
+  const str = String(value);
+  assertSafeContent(str, key);
+  if (key === "class") return `class="${sanitizeClassName(str)}"`;
+  if (key === "href" || key === "src") {
+    return `${key}="${sanitizeText(sanitizeUrl(str, key))}"`;
+  }
+  return `${key}="${sanitizeText(str)}"`;
 }
 
 export function compileNodeHtml(node: AstNode): string {

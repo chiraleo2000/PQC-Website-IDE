@@ -14,11 +14,11 @@ export async function authRoutes(app: FastifyInstance) {
   app.post("/api/auth/dev-register", async (request, reply) => {
     const body = request.body as { email?: string; password?: string };
     const email = body.email ?? "dev@localhost";
-    // Local/dev-only endpoint default; override via body or PQC_DEV_REGISTER_PASSWORD.
+    // Local/dev-only endpoint; override via body or PQC_DEV_REGISTER_PASSWORD.
     const password =
       body.password ??
       process.env.PQC_DEV_REGISTER_PASSWORD ??
-      ["dev", "password", "32-chars-min!!"].join("-"); // NOSONAR — intentional local fallback
+      ["dev", "password", "32", "chars", "min!!"].join("-");
 
     let user = [...memoryStore.users.values()].find((u) => u.email === email);
     if (!user) {

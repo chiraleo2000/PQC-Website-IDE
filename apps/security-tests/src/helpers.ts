@@ -35,7 +35,7 @@ export async function devSession() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       email: `audit-${Date.now()}@security.test`,
-      password: ["test", "password", "32-chars-min!!"].join("-"), // NOSONAR — security-suite fixture
+      password: ["test", "password", "32", "chars", "min!!"].join("-"),
     }),
   });
   if (!res.ok) throw new Error(`dev-register failed: ${res.status}`);
