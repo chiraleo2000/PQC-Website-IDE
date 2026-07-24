@@ -1,5 +1,21 @@
 import { PORTS } from "@pqc/shared";
 
+export function allowDevRegister(): boolean {
+  return (
+    process.env.ALLOW_DEV_REGISTER === "true" ||
+    (process.env.ALLOW_DEV_REGISTER !== "false" && process.env.NODE_ENV !== "production")
+  );
+}
+
+export function oidcConfig() {
+  return {
+    issuer: process.env.OIDC_ISSUER ?? "",
+    clientId: process.env.OIDC_CLIENT_ID ?? "",
+    clientSecret: process.env.OIDC_CLIENT_SECRET ?? "",
+    redirectUri: process.env.OIDC_REDIRECT_URI ?? "",
+  };
+}
+
 export const config = {
   port: Number(process.env.PORT ?? PORTS.apiGateway),
   demoCorsOrigins: (
@@ -21,7 +37,20 @@ export const config = {
   /** Stricter cap on POST /sync (expensive ML-KEM / ML-DSA per request). */
   syncRateLimitMax: Number(process.env.SYNC_RATE_LIMIT_MAX ?? 30),
   syncRateLimitWindowMs: Number(process.env.SYNC_RATE_LIMIT_WINDOW_MS ?? 60_000),
-  databaseUrl: process.env.DATABASE_URL ?? "",
+  get databaseUrl() {
+    return process.env.DATABASE_URL ?? "";
+  },
   gitOpsEnabled: process.env.GIT_OPS_ENABLED === "true",
   gitOpsDefaultToken: process.env.GIT_OPS_TOKEN ?? "",
+  get allowDevRegister() {
+    return allowDevRegister();
+  },
+  get oidc() {
+    return oidcConfig();
+  },
 };
+
+export function isOidcConfigured(): boolean {
+  const { issuer, clientId, redirectUri } = oidcConfig();
+  return Boolean(issuer && clientId && redirectUri);
+}

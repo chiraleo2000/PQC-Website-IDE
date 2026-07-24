@@ -66,6 +66,11 @@ services:
       NONCE_TTL_MS: ${NONCE_TTL_MS:-300000}
       DEMO_CORS_ORIGINS: ${DEMO_CORS_ORIGINS:-https://localhost}
       GIT_OPS_ENABLED: ${GIT_OPS_ENABLED:-false}
+      ALLOW_DEV_REGISTER: ${ALLOW_DEV_REGISTER:-false}
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -94,6 +99,8 @@ services:
       args:
         # Same-origin /api via nginx reverse proxy behind Traefik
         VITE_API_URL: ""
+        VITE_AUTH_MODE: ${VITE_AUTH_MODE:-login}
+        VITE_OIDC_ENABLED: ${VITE_OIDC_ENABLED:-false}
     restart: unless-stopped
     depends_on:
       api-gateway:

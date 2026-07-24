@@ -10,6 +10,7 @@ import { authenticate } from "./middleware/auth.js";
 import { authRoutes } from "./routes/auth.js";
 import { exportRoutes } from "./routes/export.js";
 import { projectRoutes } from "./routes/projects.js";
+import { securityAuditRoutes } from "./routes/security-audit.js";
 import { gatewayCorsOptions } from "./lib/demo-cors.js";
 import { demoApiRoutes } from "./routes/demo-api/index.js";
 
@@ -42,9 +43,12 @@ export async function buildApp() {
     status: "ok",
     enforcePqcOnly: config.enforcePqcOnly,
     port: config.port,
+    allowDevRegister: config.allowDevRegister,
+    postgres: Boolean(config.databaseUrl),
   }));
 
   await app.register(authRoutes);
+  await app.register(securityAuditRoutes);
   await app.register(projectRoutes);
   await app.register(exportRoutes);
   await app.register(demoApiRoutes);

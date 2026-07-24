@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "root": {
+    "id": "d1000000-0000-4000-8000-000000000001",
+    "type": "section",
+    "props": { "className": "min-h-screen bg-white text-zinc-900 flex" },
+    "children": [
+      {
+        "id": "d1000000-0000-4000-8000-000000000002",
+        "type": "nav",
+        "props": { "className": "w-56 border-r border-zinc-200 p-6 text-sm", "children": "Docs" },
+        "children": [
+          {
+            "id": "d1000000-0000-4000-8000-000000000003",
+            "type": "a",
+            "props": { "href": "#intro", "className": "block py-1 text-zinc-700", "children": "Introduction" },
+            "children": []
+          },
+          {
+            "id": "d1000000-0000-4000-8000-000000000004",
+            "type": "a",
+            "props": { "href": "#crypto", "className": "block py-1 text-zinc-700", "children": "Hybrid crypto" },
+            "children": []
+          }
+        ]
+      },
+      {
+        "id": "d1000000-0000-4000-8000-000000000005",
+        "type": "main",
+        "props": { "className": "flex-1 p-10 max-w-3xl" },
+        "children": [
+          {
+            "id": "d1000000-0000-4000-8000-000000000006",
+            "type": "h1",
+            "props": { "className": "text-3xl font-bold", "children": "Documentation" },
+            "children": []
+          },
+          {
+            "id": "d1000000-0000-4000-8000-000000000007",
+            "type": "p",
+            "props": { "className": "mt-4 text-zinc-600", "children": "Explain algorithms, threat model, and export SEO fields." },
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,4 +1,8 @@
-import type { AstNode } from "@pqc/shared";
+import {
+  ensureAstV2,
+  type AstNode,
+  type AstRoot,
+} from "@pqc/shared";
 import { compileHtmlDocument } from "./compile-html.js";
 import { compileReactPage } from "./compile-react.js";
 export { CompilerSecurityError } from "./sanitize.js";
@@ -10,45 +14,95 @@ export interface CompileOptions {
   siteOrigin?: string;
 }
 
+export interface CompiledPageFile {
+  slug: string;
+  title: string;
+  html: string;
+}
+
 export interface CompiledSite {
   html: string;
   css: string;
   react: string;
   scope: string;
+  pages: CompiledPageFile[];
   demoScript?: string;
   robotsTxt?: string;
   sitemapXml?: string;
 }
 
+function isAstRoot(value: AstNode | AstRoot): value is AstRoot {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "version" in value &&
+    (value.version === 1 || value.version === 2) &&
+    "root" in value
+  );
+}
+
 /**
  * Parse verified AST JSON into production HTML, scoped CSS, and React (TSX).
- * All user-controlled props pass through aggressive sanitization (XSS-safe).
+ * Accepts a single page root node or a full AstRoot (multi-page v1/v2).
  */
 export function compileAstToSite(
-  ast: AstNode,
+  ast: AstNode | AstRoot,
   projectName: string,
   options: CompileOptions = {}
 ): CompiledSite {
   const scope = projectName.replace(/[^a-z0-9-]/gi, "-").toLowerCase() || "site";
-  const { html, css } = compileHtmlDocument(ast, projectName, scope, options);
-  const react = compileReactPage(ast, scope);
+  const origin = (options.siteOrigin ?? "https://example.com").replace(/\/$/, "");
+
+  const pageRoots: Array<{ slug: string; title: string; root: AstNode }> = isAstRoot(ast)
+    ? ensureAstV2(ast).pages.map((p) => ({ slug: p.slug, title: p.title, root: p.root }))
+    : [{ slug: "index", title: projectName, root: ast }];
+
+  const compiledPages: CompiledPageFile[] = [];
+  let css = "";
+  let react = "";
+  let indexHtml = "";
+
+  for (const page of pageRoots) {
+    const doc = compileHtmlDocument(page.root, page.title || projectName, scope, options);
+    css = doc.css || css;
+    const pageReact = compileReactPage(page.root, `${scope}-${page.slug}`);
+    react = react ? `${react}\n\n// --- ${page.slug} ---\n${pageReact}` : pageReact;
+    compiledPages.push({ slug: page.slug, title: page.title, html: doc.html });
+    if (page.slug === "index") indexHtml = doc.html;
+  }
+
+  if (!indexHtml && compiledPages[0]) {
+    indexHtml = compiledPages[0].html;
+  }
+
   const demoScript = options.demoMode
     ? `// Demo runtime\nconst API='${(options.apiBase ?? "http://localhost:4000").replace(/['"<>]/g, "")}';\n${DEMO_RUNTIME_SOURCE}`
     : undefined;
 
-  const origin = (options.siteOrigin ?? "https://example.com").replace(/\/$/, "");
   const robotsTxt = `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`;
+  const urls = compiledPages
+    .map((p) => {
+      const file = `${p.slug}.html`;
+      const priority = p.slug === "index" ? "1.0" : "0.8";
+      return `  <url>\n    <loc>${origin}/${file}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
+    })
+    .join("\n");
   const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>${origin}/index.html</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
+${urls}
 </urlset>
 `;
 
-  return { html, css, react, scope, demoScript, robotsTxt, sitemapXml };
+  return {
+    html: indexHtml,
+    css,
+    react,
+    scope,
+    pages: compiledPages,
+    demoScript,
+    robotsTxt,
+    sitemapXml,
+  };
 }
 
 const DEMO_RUNTIME_SOURCE = `

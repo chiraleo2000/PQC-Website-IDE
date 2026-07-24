@@ -37,8 +37,14 @@ pnpm security-tests   # see docs/security-audit.md
 
 Starts Go crypto-service, Fastify gateway, and Vite web dev server automatically.
 
+**Browsers:** Chromium (full suite), Firefox + WebKit (`ide-save-flow`), Edge on Windows (`channel: msedge`). CI installs chromium/firefox/webkit.
+
+Known notes:
+- WebCrypto + Worker paths are covered by Chromium first; Firefox/WebKit run the core save flow.
+- Edge project is skipped on Linux CI (no `msedge` channel).
+
 ```bash
-pnpm --filter @pqc/e2e exec playwright install chromium
+pnpm --filter @pqc/e2e exec playwright install --with-deps chromium firefox webkit
 pnpm test:e2e
 ```
 

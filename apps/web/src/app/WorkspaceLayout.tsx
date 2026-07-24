@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "./AppShell";
 import { CenterCanvas } from "../components/organisms/CenterCanvas";
 import { EditorDndProvider } from "../components/organisms/EditorDndProvider";
@@ -7,8 +7,15 @@ import { ProjectsPanel } from "../components/organisms/ProjectsPanel";
 import { PqcSecurityPanel } from "../components/organisms/PqcSecurityPanel";
 import { RightPropertiesPanel } from "../components/organisms/RightPropertiesPanel";
 import { TemplatesPanel } from "../components/organisms/TemplatesPanel";
+import { PagesPanel } from "../components/organisms/PagesPanel";
 import { TopBar } from "../components/organisms/TopBar";
-import { registerDevSession, registerSignPublicKey } from "../api/auth";
+import { AuthGate } from "../components/organisms/AuthGate";
+import {
+  getAuthMode,
+  registerDevSession,
+  registerSignPublicKey,
+  type AuthSession,
+} from "../api/auth";
 import { generateSignKeypair } from "../crypto/pqcClient";
 import { useEditorStore, type ToastTone } from "../stores/editorStore";
 
@@ -27,6 +34,23 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function completeSession(
+  session: AuthSession,
+  cancelled: () => boolean,
+  setAuth: SetAuthFn,
+  pushToast: PushToastFn
+): Promise<void> {
+  const { publicKeyB64 } = await generateSignKeypair();
+  if (cancelled()) return;
+  await registerSignPublicKey(session.token, session.signerPublicKeyId, publicKeyB64);
+  if (cancelled()) return;
+  setAuth(session.token, session.signerPublicKeyId, session.kemPublicKeyB64, session.x25519PublicKeyB64);
+  pushToast({
+    tone: "success",
+    message: "Hybrid PQC session ready — ML-KEM + X25519 + ML-DSA",
+  });
+}
+
 async function bootstrapPqcSession(
   cancelled: () => boolean,
   setAuth: SetAuthFn,
@@ -35,7 +59,9 @@ async function bootstrapPqcSession(
   for (let attempts = 1; attempts <= MAX_AUTH_ATTEMPTS; attempts++) {
     if (cancelled()) return;
     try {
-      await tryAuthOnce(cancelled, setAuth, pushToast);
+      const session = await registerDevSession();
+      if (cancelled()) return;
+      await completeSession(session, cancelled, setAuth, pushToast);
       return;
     } catch (e) {
       console.error(`[PQC] Auth attempt ${attempts}/${MAX_AUTH_ATTEMPTS} failed:`, e);
@@ -48,31 +74,13 @@ async function bootstrapPqcSession(
   }
 }
 
-async function tryAuthOnce(
-  cancelled: () => boolean,
-  setAuth: SetAuthFn,
-  pushToast: PushToastFn
-): Promise<void> {
-  const session = await registerDevSession();
-  if (cancelled()) return;
-  const { publicKeyB64 } = await generateSignKeypair();
-  if (cancelled()) return;
-  await registerSignPublicKey(session.token, session.signerPublicKeyId, publicKeyB64);
-  if (cancelled()) return;
-  setAuth(session.token, session.signerPublicKeyId, session.kemPublicKeyB64, session.x25519PublicKeyB64);
-  pushToast({
-    tone: "success",
-    message: "Hybrid PQC session ready — ML-KEM + X25519 + ML-DSA",
-  });
-}
-
 function failAuth(cancelled: () => boolean, pushToast: PushToastFn): void {
   console.error("[PQC] All auth attempts failed");
   if (cancelled()) return;
   useEditorStore.getState().setCryptoStatus("error", "API unavailable — start api-gateway");
   pushToast({
     tone: "error",
-    message: "API unavailable — start api-gateway / Docker stack",
+    message: "Session revoked or API unavailable — sign in again / start api-gateway",
   });
 }
 
@@ -80,9 +88,13 @@ export function WorkspaceLayout() {
   const setAuth = useEditorStore((s) => s.setAuth);
   const pushToast = useEditorStore((s) => s.pushToast);
   const uiMode = useEditorStore((s) => s.uiMode);
+  const authToken = useEditorStore((s) => s.authToken);
   const retryAuthRequested = useEditorStore((s) => s.retryAuthRequested);
+  const authMode = getAuthMode();
+  const [loginPending, setLoginPending] = useState(authMode === "login" && !authToken);
 
   useEffect(() => {
+    if (authMode === "login") return;
     let cancelled = false;
     void bootstrapPqcSession(
       () => cancelled,
@@ -92,7 +104,13 @@ export function WorkspaceLayout() {
     return () => {
       cancelled = true;
     };
-  }, [setAuth, pushToast, retryAuthRequested]);
+  }, [setAuth, pushToast, retryAuthRequested, authMode]);
+
+  useEffect(() => {
+    if (authMode === "login") {
+      setLoginPending(!authToken);
+    }
+  }, [authMode, authToken]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -118,6 +136,18 @@ export function WorkspaceLayout() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
+  if (loginPending) {
+    return (
+      <AuthGate
+        onAuthenticated={(session) => {
+          void completeSession(session, () => false, setAuth, pushToast).then(() => {
+            setLoginPending(false);
+          });
+        }}
+      />
+    );
+  }
+
   return (
     <AppShell>
       <TopBar />
@@ -126,10 +156,13 @@ export function WorkspaceLayout() {
       {uiMode === "pqc" && <PqcSecurityPanel />}
       {uiMode === "builder" && (
         <EditorDndProvider>
-          <div className="flex min-h-0 flex-1">
-            <LeftAssetSidebar />
-            <CenterCanvas />
-            <RightPropertiesPanel />
+          <div className="flex min-h-0 flex-1 flex-col">
+            <PagesPanel />
+            <div className="flex min-h-0 flex-1">
+              <LeftAssetSidebar />
+              <CenterCanvas />
+              <RightPropertiesPanel />
+            </div>
           </div>
         </EditorDndProvider>
       )}

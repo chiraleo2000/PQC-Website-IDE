@@ -41,4 +41,16 @@ describe("demo templates", () => {
     expect(findByType(t.root, "newPostForm")).toBe(true);
     expect(findByType(t.root, "input")).toBe(true);
   });
+
+  it("landing template is multi-page v2", () => {
+    const t = loadTemplate("landing");
+    expect(t.version).toBe(2);
+    expect(t.pages.length).toBeGreaterThanOrEqual(2);
+    expect(t.pages.some((p) => p.slug === "about")).toBe(true);
+  });
+
+  it("portfolio and docs templates validate", () => {
+    expect(astRootSchema.safeParse(loadTemplate("portfolio")).success).toBe(true);
+    expect(astRootSchema.safeParse(loadTemplate("docs")).success).toBe(true);
+  });
 });

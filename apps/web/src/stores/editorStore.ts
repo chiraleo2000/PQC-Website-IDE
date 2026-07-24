@@ -3,16 +3,22 @@ import { useShallow } from "zustand/react/shallow";
 import {
   type AstNode,
   type AstRoot,
+  addSitePage,
   createDefaultRoot,
   createNode,
   createSectionPreset,
+  ensureAstV2,
   findNode,
   findParent as findParentInTree,
   insertChild,
   loadTemplate,
   removeNode,
+  removeSitePage,
+  renameSitePage,
+  setActivePage,
   type SectionPresetId,
   updateNodeProps,
+  withActiveRoot,
 } from "@pqc/shared";
 
 export type CryptoStatus =
@@ -100,7 +106,7 @@ export function applyThemeToDocument(theme: ThemeMode) {
 }
 
 function emptyRoot(): AstRoot {
-  return {
+  return ensureAstV2({
     version: 1,
     root: {
       id: crypto.randomUUID(),
@@ -108,7 +114,7 @@ function emptyRoot(): AstRoot {
       props: { className: "min-h-screen bg-white text-zinc-900" },
       children: [],
     },
-  };
+  });
 }
 
 function cloneAst(ast: AstRoot): AstRoot {
@@ -162,11 +168,15 @@ interface EditorState {
   pushToast: (toast: Omit<ToastItem, "id">) => void;
   dismissToast: (id: string) => void;
   newProject: () => void;
-  loadDemoTemplate: (name: "login" | "blog") => void;
+  loadDemoTemplate: (name: "login" | "blog" | "landing" | "portfolio" | "docs") => void;
   switchProject: (id: string) => void;
   persistCurrentProject: () => void;
   markSynced: () => void;
   markPublished: (publishedAt: string) => void;
+  setActivePageId: (pageId: string) => void;
+  addPage: (title: string, slug: string) => void;
+  removePage: (pageId: string) => void;
+  renamePage: (pageId: string, title: string, slug: string) => void;
   undo: () => void;
   redo: () => void;
   retryAuthRequested: number;
@@ -230,10 +240,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!parent) return;
     pushHistory(get, set);
     const updatedParent = insertChild(parent, index, createNode(type));
-    set({
-      dirty: true,
-      ast: { ...ast, root: replaceNodeInTree(ast.root, parentId, updatedParent) },
-    });
+    const nextRoot = replaceNodeInTree(ast.root, parentId, updatedParent);
+    set({ dirty: true, ast: withActiveRoot(ast, nextRoot) });
   },
 
   insertPresetAt: (parentId, index, presetId) => {
@@ -243,10 +251,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     pushHistory(get, set);
     const preset = createSectionPreset(presetId);
     const updatedParent = insertChild(parent, index, preset);
+    const nextRoot = replaceNodeInTree(ast.root, parentId, updatedParent);
     set({
       dirty: true,
       selectedNodeId: preset.id,
-      ast: { ...ast, root: replaceNodeInTree(ast.root, parentId, updatedParent) },
+      ast: withActiveRoot(ast, nextRoot),
     });
   },
 
@@ -260,10 +269,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     if (!newParent || node.id === newParentId) return;
     pushHistory(get, set);
     const updatedParent = insertChild(newParent, newIndex, node);
-    set({
-      dirty: true,
-      ast: { ...ast, root: replaceNodeInTree(rootWithout, newParentId, updatedParent) },
-    });
+    const nextRoot = replaceNodeInTree(rootWithout, newParentId, updatedParent);
+    set({ dirty: true, ast: withActiveRoot(ast, nextRoot) });
   },
 
   updateSelectedProps: (props) => {
@@ -272,7 +279,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     pushHistory(get, set);
     set({
       dirty: true,
-      ast: { ...ast, root: updateNodeProps(ast.root, selectedNodeId, props) },
+      ast: withActiveRoot(ast, updateNodeProps(ast.root, selectedNodeId, props)),
     });
   },
 
@@ -282,14 +289,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     pushHistory(get, set);
     set({
       dirty: true,
-      ast: { ...ast, root: removeNode(ast.root, selectedNodeId) },
+      ast: withActiveRoot(ast, removeNode(ast.root, selectedNodeId)),
       selectedNodeId: null,
     });
   },
 
   setAstRoot: (root) => {
     pushHistory(get, set);
-    set({ ast: { version: 1, root }, dirty: true, selectedNodeId: null });
+    set({ ast: withActiveRoot(get().ast, root), dirty: true, selectedNodeId: null });
   },
 
   setCryptoStatus: (cryptoStatus, cryptoError = null) => set({ cryptoStatus, cryptoError }),
@@ -348,10 +355,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   loadDemoTemplate: (name) => {
     pushHistory(get, set);
-    const template = loadTemplate(name);
-    const projectName = name === "login" ? "Login Demo" : "Blog Demo";
+    const template = ensureAstV2(loadTemplate(name));
+    const labels: Record<typeof name, string> = {
+      login: "Login Demo",
+      blog: "Blog Demo",
+      landing: "Landing Demo",
+      portfolio: "Portfolio Demo",
+      docs: "Docs Demo",
+    };
+    const projectName = labels[name];
     set({
-      ast: { version: 1, root: template.root },
+      ast: template,
       projectName,
       selectedNodeId: null,
       dirty: true,
@@ -363,8 +377,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   switchProject: (id) => {
     const entry = get().projectIndex.find((p) => p.id === id);
-    const ast = readLocalAst(id);
-    if (!entry || !ast) {
+    const raw = readLocalAst(id);
+    if (!entry || !raw) {
       get().pushToast({ tone: "error", message: "Project snapshot not found locally" });
       return;
     }
@@ -372,13 +386,42 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({
       projectId: id,
       projectName: entry.name,
-      ast,
+      ast: ensureAstV2(raw),
       selectedNodeId: null,
       dirty: false,
       uiMode: "builder",
       lastSyncedAt: entry.updatedAt,
     });
     get().pushToast({ tone: "info", message: `Opened “${entry.name}”` });
+  },
+
+  setActivePageId: (pageId) => {
+    pushHistory(get, set);
+    set({ ast: setActivePage(get().ast, pageId), selectedNodeId: null, dirty: true });
+  },
+
+  addPage: (title, slug) => {
+    pushHistory(get, set);
+    const root = createNode("section", { className: "min-h-screen bg-white text-zinc-900" }, [
+      createNode("main", { className: "p-8" }, [
+        createNode("h1", { children: title }),
+      ]),
+    ]);
+    set({
+      ast: addSitePage(get().ast, { title, slug, root }),
+      selectedNodeId: null,
+      dirty: true,
+    });
+  },
+
+  removePage: (pageId) => {
+    pushHistory(get, set);
+    set({ ast: removeSitePage(get().ast, pageId), selectedNodeId: null, dirty: true });
+  },
+
+  renamePage: (pageId, title, slug) => {
+    pushHistory(get, set);
+    set({ ast: renameSitePage(get().ast, pageId, { title, slug }), dirty: true });
   },
 
   persistCurrentProject: () => {

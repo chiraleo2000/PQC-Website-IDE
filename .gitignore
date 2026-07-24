@@ -212,3 +212,8 @@ hacker-data/
 apps/e2e/test-results/
 apps/e2e/playwright-report/
 **/test-results/
+
+# Selenium local run logs
+apps/e2e/scripts/demo-shots/selenium/_*.log
+apps/e2e/scripts/demo-shots/selenium/_*.err
+

@@ -175,8 +175,13 @@ export async function encryptAndSignAstPayload(
 
     const nonce = crypto.randomUUID();
     const timestamp = new Date().toISOString();
-    const ast = JSON.parse(params.astJson) as { root: AstNode };
-    const astNodeCount = countNodes(ast.root);
+    const ast = JSON.parse(params.astJson) as {
+      root: AstNode;
+      pages?: Array<{ root: AstNode }>;
+    };
+    const astNodeCount = ast.pages?.length
+      ? ast.pages.reduce((n, p) => n + countNodes(p.root), 0)
+      : countNodes(ast.root);
 
     const kem = {
       algorithm: PQC_ALGORITHMS.KEM as "ML-KEM-768",

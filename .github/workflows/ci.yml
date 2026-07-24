@@ -84,6 +84,8 @@ jobs:
           PORT: "4000"
           CRYPTO_SERVICE_URL: http://127.0.0.1:4081
           ENFORCE_PQC_ONLY: "true"
+          ALLOW_DEV_REGISTER: "true"
+          NODE_ENV: "test"
         run: |
           pnpm --filter @pqc/api-gateway dev &
           sleep 3
@@ -143,14 +145,23 @@ jobs:
       - run: pnpm install
       - run: pnpm --filter @pqc/shared build
       - run: pnpm --filter @pqc/demo-runtime build
-      - run: pnpm --filter @pqc/e2e exec playwright install chromium
-      - run: pnpm --filter @pqc/e2e test
+      - run: pnpm --filter @pqc/e2e exec playwright install --with-deps chromium firefox webkit
+      - name: E2E Chromium (full suite)
+        run: pnpm --filter @pqc/e2e exec playwright test --project=chromium --project=demo --project=compiled
         env:
           CI: true
+          ALLOW_DEV_REGISTER: "true"
+          DATABASE_URL: postgresql://pqc_ide:pqc_ide_secret@localhost:5432/pqc_ide
+      - name: E2E Firefox + WebKit (ide-save-flow)
+        run: pnpm --filter @pqc/e2e exec playwright test ide-save-flow --project=firefox --project=webkit
+        env:
+          CI: true
+          ALLOW_DEV_REGISTER: "true"
           DATABASE_URL: postgresql://pqc_ide:pqc_ide_secret@localhost:5432/pqc_ide
       - run: pnpm test:compiled-demo
         env:
           CI: true
+          ALLOW_DEV_REGISTER: "true"
 
   docker:
     runs-on: ubuntu-latest

@@ -11,6 +11,8 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
+  authProvider: text("auth_provider").notNull().default("password"),
+  oidcSubject: text("oidc_subject"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -22,6 +24,8 @@ export const signingKeys = pgTable("signing_keys", {
   publicKeyB64: text("public_key_b64").notNull(),
   kemPublicKeyB64: text("kem_public_key_b64").notNull(),
   kemSecretKeyB64: text("kem_secret_key_b64").notNull(),
+  x25519PublicKeyB64: text("x25519_public_key_b64").notNull().default(""),
+  x25519SecretKeyB64: text("x25519_secret_key_b64").notNull().default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -60,5 +64,6 @@ export const securityAuditLogs = pgTable("security_audit_logs", {
   userId: uuid("user_id"),
   event: text("event").notNull(),
   detail: jsonb("detail"),
+  priority: text("priority").notNull().default("NORMAL"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

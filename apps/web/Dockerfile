@@ -12,7 +12,11 @@ RUN pnpm install --frozen-lockfile 2>/dev/null || pnpm install
 RUN pnpm --filter @pqc/shared build
 
 ARG VITE_API_URL=
+ARG VITE_AUTH_MODE=login
+ARG VITE_OIDC_ENABLED=false
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_AUTH_MODE=$VITE_AUTH_MODE
+ENV VITE_OIDC_ENABLED=$VITE_OIDC_ENABLED
 RUN pnpm --filter @pqc/web build
 
 # Runtime: hardened nginx on Alpine
@@ -22,8 +26,9 @@ RUN rm /etc/nginx/conf.d/default.conf \
   && chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx/conf.d \
   && touch /var/run/nginx.pid && chown nginx:nginx /var/run/nginx.pid
 
-COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build --chown=nginx:nginx /app/apps/web/dist /usr/share/nginx/html
+# Own as root (not nginx) so the non-root runtime user cannot modify assets (docker:S6504).
+COPY --chmod=444 apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build --chmod=555 /app/apps/web/dist /usr/share/nginx/html
 
 USER nginx
 EXPOSE 8080

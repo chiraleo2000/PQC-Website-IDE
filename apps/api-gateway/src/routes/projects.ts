@@ -35,12 +35,10 @@ export async function projectRoutes(app: FastifyInstance) {
         return;
       }
 
-      const nonceKey = memoryStore.nonceKey(ctx.userId, ctx.payload.nonce);
-      memoryStore.nonces.add(nonceKey);
-      memoryStore.saveVersion(ctx.projectId, ctx.payload, ast);
+      await memoryStore.addNonce(ctx.userId, ctx.payload.nonce);
 
       if (!memoryStore.projects.has(ctx.projectId)) {
-        memoryStore.projects.set(ctx.projectId, {
+        await memoryStore.upsertProject({
           id: ctx.projectId,
           userId: ctx.userId,
           name: "Untitled Site",
@@ -49,6 +47,7 @@ export async function projectRoutes(app: FastifyInstance) {
       } else {
         memoryStore.projects.get(ctx.projectId)!.latestAst = ast;
       }
+      await memoryStore.saveVersion(ctx.projectId, ctx.payload, ast);
 
       return reply.send({
         ok: true,
@@ -77,8 +76,7 @@ export async function projectRoutes(app: FastifyInstance) {
         return reply.code(404).send({ message: "Not found" });
       }
 
-      const nonceKey = memoryStore.nonceKey(ctx.userId, ctx.intent.nonce);
-      memoryStore.nonces.add(nonceKey);
+      await memoryStore.addNonce(ctx.userId, ctx.intent.nonce);
 
       return reply.send({ ok: true, publishedAt: new Date().toISOString() });
     }

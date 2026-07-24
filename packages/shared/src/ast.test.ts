@@ -28,12 +28,14 @@ describe("astRootSchema", () => {
   it("rejects root node without uuid id", () => {
     const root = createDefaultRoot();
     root.root.id = "not-a-uuid";
+    root.pages[0]!.root.id = "not-a-uuid";
     expect(astRootSchema.safeParse(root).success).toBe(false);
   });
 
   it("rejects empty node type", () => {
     const root = createDefaultRoot();
     root.root.type = "";
+    root.pages[0]!.root.type = "";
     expect(astRootSchema.safeParse(root).success).toBe(false);
   });
 
@@ -42,7 +44,15 @@ describe("astRootSchema", () => {
     root.root.children[0].children = [
       { id: "bad-id", type: "p", props: {}, children: [] },
     ];
+    root.pages[0]!.root = root.root;
     expect(astRootSchema.safeParse(root).success).toBe(false);
+  });
+
+  it("accepts multi-page v2 roots", () => {
+    const root = createDefaultRoot();
+    expect(root.version).toBe(2);
+    expect(root.pages.length).toBeGreaterThan(0);
+    expect(astRootSchema.safeParse(root).success).toBe(true);
   });
 
   it("strips unknown top-level keys (Zod default)", () => {

@@ -7,6 +7,7 @@ Screenshots every step; writes redacted pqc-evidence.json.
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
 from pathlib import Path
@@ -18,8 +19,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
-BASE = "http://127.0.0.1:4001/"
-API_HEALTH = "http://127.0.0.1:4001/api/health"
+# Prefer localhost — Vite may bind IPv6-only ([::1]) on Windows; 127.0.0.1 then fails.
+BASE = os.environ.get("PQC_SELENIUM_BASE", "http://localhost:4001/")
+API_HEALTH = os.environ.get("PQC_SELENIUM_HEALTH", "http://localhost:4001/api/health")
 OUT = Path(__file__).resolve().parent / "demo-shots" / "selenium"
 OUT.mkdir(parents=True, exist_ok=True)
 
@@ -326,13 +328,13 @@ def main() -> None:
             enforce = body["crypto"].get("enforcePqcOnly")
         evidence["checks"]["health_200"] = True
         evidence["checks"]["enforcePqcOnly"] = enforce
-        print(f"0) Health OK · enforcePqcOnly={enforce}")
+        print(f"0) Health OK | enforcePqcOnly={enforce}")
         shot(driver, "00-health.png")
         remove_overlays(driver)
 
         theme = driver.find_element(By.CSS_SELECTOR, "html").get_attribute("data-theme")
         assert theme == "light", f"expected light theme, got {theme}"
-        print(f"1) Shell loaded · badge={badge_text(driver)!r} · theme={theme}")
+        print(f"1) Shell loaded | badge={badge_text(driver)!r} | theme={theme}")
         shot(driver, "01-shell.png")
         evidence["checks"]["light_theme"] = True
 
@@ -401,7 +403,7 @@ def main() -> None:
         sync_body = net.latest_sync()
         assert sync_ok, f"No successful /sync. hits={[h for h in net.hits if 'sync' in h['url']]}"
         assert sync_body is not None and len(net.sync_bodies) > sync_before, (
-            "CDP did not capture sync POST body — cannot prove PQC algorithms"
+            "CDP did not capture sync POST body - cannot prove PQC algorithms"
         )
         assert_sync_pqc(sync_body)
         sync_redacted = redact_sync_body(sync_body)
@@ -409,8 +411,8 @@ def main() -> None:
         evidence["checks"]["sync_200"] = True
         evidence["checks"]["sync_pqc_algorithms"] = True
         print(
-            f"7) Save → sync_200 · {PQC_KEM}/{PQC_CLASSICAL_KEM}/{PQC_CIPHER}/{PQC_SIGN} "
-            f"· badge={badge_text(driver)!r}"
+            f"7) Save -> sync_200 | {PQC_KEM}/{PQC_CLASSICAL_KEM}/{PQC_CIPHER}/{PQC_SIGN} "
+            f"| badge={badge_text(driver)!r}"
         )
         shot(driver, "06-after-save.png")
 
@@ -420,7 +422,7 @@ def main() -> None:
                 "endpoint": "POST /sync",
                 "status": 200,
                 **sync_redacted,
-                "verdict": "PASS — NIST hybrid PQC envelope",
+                "verdict": "PASS - NIST hybrid PQC envelope",
             },
         )
         shot(driver, "06b-sync-pqc-assert.png")
@@ -437,14 +439,14 @@ def main() -> None:
         pub_body = net.latest_publish()
         assert pub_ok, f"No successful /publish. hits={[h for h in net.hits if 'publish' in h['url']]}"
         assert pub_body is not None and len(net.publish_bodies) > pub_before, (
-            "CDP did not capture publish POST body — cannot prove ML-DSA intent"
+            "CDP did not capture publish POST body - cannot prove ML-DSA intent"
         )
         assert_publish_pqc(pub_body)
         pub_redacted = redact_publish_body(pub_body)
         evidence["publish"] = {"status": 200, "intent": pub_redacted}
         evidence["checks"]["publish_200"] = True
         evidence["checks"]["publish_mldsa"] = True
-        print(f"8) Publish → preview · publish_200 · {PQC_SIGN}")
+        print(f"8) Publish -> preview | publish_200 | {PQC_SIGN}")
         shot(driver, "07-preview.png")
         wait_click(wait, By.CSS_SELECTOR, '[data-testid="preview-close"]')
 
@@ -460,7 +462,7 @@ def main() -> None:
             "note": "Export is JWT + stored AST ZIP; PQC proven on prior sync decrypt",
         }
         evidence["checks"]["export_200"] = export_ok
-        print(f"9) Export → export_200={export_ok} · badge={badge_text(driver)!r}")
+        print(f"9) Export -> export_200={export_ok} | badge={badge_text(driver)!r}")
         assert export_ok, f"No successful /export. hits={export_hits}"
         shot(driver, "08-after-export.png")
 
@@ -475,12 +477,12 @@ def main() -> None:
         time.sleep(0.8)
         name = driver.find_element(By.ID, "project-name").get_attribute("value")
         assert "Login" in name, name
-        print(f"11) Top-bar template → {name!r}")
+        print(f"11) Top-bar template -> {name!r}")
         shot(driver, "10-login-template.png")
 
         evidence["checks"]["all_selenium"] = True
         evidence["verdict"] = (
-            f"PASS — site data transferred with {PQC_KEM} + {PQC_CLASSICAL_KEM} + {PQC_CIPHER} + {PQC_SIGN}; "
+            f"PASS - site data transferred with {PQC_KEM} + {PQC_CLASSICAL_KEM} + {PQC_CIPHER} + {PQC_SIGN}; "
             "classical harvestable envelopes are rejected by ENFORCE_PQC_ONLY (see security-tests)"
         )
         write_evidence(evidence)

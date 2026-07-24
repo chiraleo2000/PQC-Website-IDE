@@ -16,12 +16,109 @@ export type AstNode = {
   children: AstNode[];
 };
 
-export const astRootSchema = z.object({
+export const sitePageSchema = z.object({
+  id: z.string().uuid(),
+  slug: z.string().min(1).regex(/^[a-z0-9-]+$/),
+  title: z.string().min(1),
+  root: astNodeSchema as z.ZodType<AstNode>,
+});
+
+export type SitePage = z.infer<typeof sitePageSchema>;
+
+const astRootV1Schema = z.object({
   version: z.literal(1),
   root: astNodeSchema as z.ZodType<AstNode>,
 });
 
-export type AstRoot = z.infer<typeof astRootSchema>;
+const astRootV2Schema = z.object({
+  version: z.literal(2),
+  pages: z.array(sitePageSchema).min(1),
+  activePageId: z.string().uuid(),
+  /** Mirrored active-page root for editor / sync helpers. */
+  root: astNodeSchema as z.ZodType<AstNode>,
+});
+
+export const astRootSchema = z.union([astRootV1Schema, astRootV2Schema]);
+
+export type AstRootV1 = z.infer<typeof astRootV1Schema>;
+export type AstRootV2 = z.infer<typeof astRootV2Schema>;
+export type AstRoot = AstRootV1 | AstRootV2;
+
+function syncRootMirror(pages: SitePage[], activePageId: string): AstRootV2 {
+  const active = pages.find((p) => p.id === activePageId) ?? pages[0]!;
+  return {
+    version: 2,
+    pages: pages.map((p) => (p.id === active.id ? { ...p, root: active.root } : p)),
+    activePageId: active.id,
+    root: active.root,
+  };
+}
+
+/** Normalize any stored project blob to multi-page v2 (with mirrored `root`). */
+export function ensureAstV2(ast: AstRoot): AstRootV2 {
+  if (ast.version === 2) {
+    return syncRootMirror(ast.pages, ast.activePageId);
+  }
+  const pageId = crypto.randomUUID();
+  return syncRootMirror(
+    [{ id: pageId, slug: "index", title: "Home", root: ast.root }],
+    pageId
+  );
+}
+
+export function getActivePage(ast: AstRoot): SitePage {
+  const v2 = ensureAstV2(ast);
+  return v2.pages.find((p) => p.id === v2.activePageId) ?? v2.pages[0]!;
+}
+
+export function getActiveRoot(ast: AstRoot): AstNode {
+  return ensureAstV2(ast).root;
+}
+
+export function withActiveRoot(ast: AstRoot, root: AstNode): AstRootV2 {
+  const v2 = ensureAstV2(ast);
+  const pages = v2.pages.map((p) => (p.id === v2.activePageId ? { ...p, root } : p));
+  return syncRootMirror(pages, v2.activePageId);
+}
+
+export function setActivePage(ast: AstRoot, pageId: string): AstRootV2 {
+  const v2 = ensureAstV2(ast);
+  if (!v2.pages.some((p) => p.id === pageId)) return v2;
+  return syncRootMirror(v2.pages, pageId);
+}
+
+export function addSitePage(
+  ast: AstRoot,
+  page: Omit<SitePage, "id"> & { id?: string }
+): AstRootV2 {
+  const v2 = ensureAstV2(ast);
+  const id = page.id ?? crypto.randomUUID();
+  const next: SitePage = {
+    id,
+    slug: page.slug,
+    title: page.title,
+    root: page.root,
+  };
+  return syncRootMirror([...v2.pages, next], id);
+}
+
+export function removeSitePage(ast: AstRoot, pageId: string): AstRootV2 {
+  const v2 = ensureAstV2(ast);
+  if (v2.pages.length <= 1) return v2;
+  const pages = v2.pages.filter((p) => p.id !== pageId);
+  const activePageId = v2.activePageId === pageId ? pages[0]!.id : v2.activePageId;
+  return syncRootMirror(pages, activePageId);
+}
+
+export function renameSitePage(
+  ast: AstRoot,
+  pageId: string,
+  patch: Partial<Pick<SitePage, "slug" | "title">>
+): AstRootV2 {
+  const v2 = ensureAstV2(ast);
+  const pages = v2.pages.map((p) => (p.id === pageId ? { ...p, ...patch } : p));
+  return syncRootMirror(pages, v2.activePageId);
+}
 
 export const PALETTE_COMPONENTS = [
   { type: "section", label: "Section", category: "layout" },
@@ -58,20 +155,22 @@ export function createNode(
   };
 }
 
-export function createDefaultRoot(): AstRoot {
-  return {
-    version: 1,
-    root: {
-      id: crypto.randomUUID(),
-      type: "section",
-      props: { className: "min-h-screen bg-white text-zinc-900" },
-      children: [
-        createNode("header", { className: "p-6 border-b border-zinc-200" }),
-        createNode("main", { className: "p-8 flex-1" }),
-        createNode("footer", { className: "p-4 border-t border-zinc-200 text-zinc-500" }),
-      ],
-    },
+export function createDefaultRoot(): AstRootV2 {
+  const pageId = crypto.randomUUID();
+  const root: AstNode = {
+    id: crypto.randomUUID(),
+    type: "section",
+    props: { className: "min-h-screen bg-white text-zinc-900" },
+    children: [
+      createNode("header", { className: "p-6 border-b border-zinc-200" }),
+      createNode("main", { className: "p-8 flex-1" }),
+      createNode("footer", { className: "p-4 border-t border-zinc-200 text-zinc-500" }),
+    ],
   };
+  return syncRootMirror(
+    [{ id: pageId, slug: "index", title: "Home", root }],
+    pageId
+  );
 }
 
 export function countNodes(node: AstNode): number {

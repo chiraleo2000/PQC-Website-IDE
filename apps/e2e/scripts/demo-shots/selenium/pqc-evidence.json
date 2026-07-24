@@ -1,5 +1,5 @@
 {
-  "target": "http://127.0.0.1:4001/",
+  "target": "http://localhost:4001/",
   "algorithms": {
     "kem": "ML-KEM-768",
     "classicalKem": "X25519",
@@ -21,8 +21,10 @@
   },
   "health": {
     "body": {
+      "allowDevRegister": true,
       "enforcePqcOnly": true,
       "port": 4000,
+      "postgres": false,
       "status": "ok"
     },
     "status": 200
@@ -37,37 +39,37 @@
       "classicalKem.ephemeralPublicKeyLen": 44,
       "cipher.algorithm": "AES-256-GCM",
       "cipher.ivLen": 16,
-      "cipher.ciphertextLen": 5540,
+      "cipher.ciphertextLen": 11252,
       "cipher.tagLen": 24,
       "signature.algorithm": "ML-DSA-65",
       "signature.valueLen": 4412,
       "nonceLen": 36,
       "astNodeCount": 24,
-      "projectId": "e82581dd-a9f8-475c-a7e1-9e1d383446fc",
-      "timestamp": "2026-07-22T10:08:57.382Z"
+      "projectId": "1dac7489-7f22-48c0-8be5-613c61563d76",
+      "timestamp": "2026-07-24T03:25:11.822Z"
     }
   },
   "publish": {
     "status": 200,
     "intent": {
       "action": "publish",
-      "projectId": "e82581dd-a9f8-475c-a7e1-9e1d383446fc",
+      "projectId": "1dac7489-7f22-48c0-8be5-613c61563d76",
       "signature.algorithm": "ML-DSA-65",
       "signature.valueLen": 4412,
-      "signerPublicKeyId": "486dc4a3-a380-4d48-b087-fd4dd0d888b4",
-      "timestamp": "2026-07-22T10:08:59.439Z"
+      "signerPublicKeyId": "1b872e2f-d55f-4c63-b784-7bdc2d21cec1",
+      "timestamp": "2026-07-24T03:25:14.678Z"
     }
   },
   "export": {
     "status": 200,
     "hits": [
       {
-        "url": "http://127.0.0.1:4001/api/projects/e82581dd-a9f8-475c-a7e1-9e1d383446fc/export",
+        "url": "http://localhost:4001/api/projects/1dac7489-7f22-48c0-8be5-613c61563d76/export",
         "status": 200,
         "mime": "application/zip"
       }
     ],
     "note": "Export is JWT + stored AST ZIP; PQC proven on prior sync decrypt"
   },
-  "verdict": "PASS \u2014 site data transferred with ML-KEM-768 + X25519 + AES-256-GCM + ML-DSA-65; classical harvestable envelopes are rejected by ENFORCE_PQC_ONLY (see security-tests)"
+  "verdict": "PASS - site data transferred with ML-KEM-768 + X25519 + AES-256-GCM + ML-DSA-65; classical harvestable envelopes are rejected by ENFORCE_PQC_ONLY (see security-tests)"
 }

@@ -1,0 +1,117 @@
+{
+  "version": 2,
+  "activePageId": "a1000000-0000-4000-8000-000000000001",
+  "root": {
+    "id": "a1000000-0000-4000-8000-000000000010",
+    "type": "section",
+    "props": { "className": "min-h-screen bg-slate-950 text-slate-50" },
+    "children": [
+      {
+        "id": "a1000000-0000-4000-8000-000000000011",
+        "type": "header",
+        "props": { "className": "px-8 py-6 border-b border-slate-800", "children": "Northline" },
+        "children": []
+      },
+      {
+        "id": "a1000000-0000-4000-8000-000000000012",
+        "type": "main",
+        "props": { "className": "px-8 py-20 max-w-3xl" },
+        "children": [
+          {
+            "id": "a1000000-0000-4000-8000-000000000013",
+            "type": "h1",
+            "props": { "className": "text-5xl font-bold tracking-tight", "children": "Ship quantum-ready sites" },
+            "children": []
+          },
+          {
+            "id": "a1000000-0000-4000-8000-000000000014",
+            "type": "p",
+            "props": { "className": "mt-4 text-lg text-slate-300", "children": "Hybrid PQC for sync. Clean HTML for the public web." },
+            "children": []
+          },
+          {
+            "id": "a1000000-0000-4000-8000-000000000015",
+            "type": "a",
+            "props": { "href": "/about.html", "className": "inline-block mt-8 text-cyan-300", "children": "About the stack" },
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  "pages": [
+    {
+      "id": "a1000000-0000-4000-8000-000000000001",
+      "slug": "index",
+      "title": "Home",
+      "root": {
+        "id": "a1000000-0000-4000-8000-000000000010",
+        "type": "section",
+        "props": { "className": "min-h-screen bg-slate-950 text-slate-50" },
+        "children": [
+          {
+            "id": "a1000000-0000-4000-8000-000000000011",
+            "type": "header",
+            "props": { "className": "px-8 py-6 border-b border-slate-800", "children": "Northline" },
+            "children": []
+          },
+          {
+            "id": "a1000000-0000-4000-8000-000000000012",
+            "type": "main",
+            "props": { "className": "px-8 py-20 max-w-3xl" },
+            "children": [
+              {
+                "id": "a1000000-0000-4000-8000-000000000013",
+                "type": "h1",
+                "props": { "className": "text-5xl font-bold tracking-tight", "children": "Ship quantum-ready sites" },
+                "children": []
+              },
+              {
+                "id": "a1000000-0000-4000-8000-000000000014",
+                "type": "p",
+                "props": { "className": "mt-4 text-lg text-slate-300", "children": "Hybrid PQC for sync. Clean HTML for the public web." },
+                "children": []
+              },
+              {
+                "id": "a1000000-0000-4000-8000-000000000015",
+                "type": "a",
+                "props": { "href": "/about.html", "className": "inline-block mt-8 text-cyan-300", "children": "About the stack" },
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "a1000000-0000-4000-8000-000000000002",
+      "slug": "about",
+      "title": "About",
+      "root": {
+        "id": "a1000000-0000-4000-8000-000000000020",
+        "type": "section",
+        "props": { "className": "min-h-screen bg-white text-zinc-900 p-10" },
+        "children": [
+          {
+            "id": "a1000000-0000-4000-8000-000000000021",
+            "type": "h1",
+            "props": { "className": "text-3xl font-bold", "children": "About" },
+            "children": []
+          },
+          {
+            "id": "a1000000-0000-4000-8000-000000000022",
+            "type": "p",
+            "props": { "className": "mt-4 text-zinc-600", "children": "ML-KEM-768 + X25519 + ML-DSA-65 protect the IDE sync path." },
+            "children": []
+          },
+          {
+            "id": "a1000000-0000-4000-8000-000000000023",
+            "type": "a",
+            "props": { "href": "/index.html", "className": "mt-6 inline-block text-cyan-700", "children": "Back home" },
+            "children": []
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -28,11 +28,11 @@ export async function exportRoutes(app: FastifyInstance) {
         return reply.code(404).send({ message: "Not found" });
       }
 
-      const astRoot = project.latestAst as { root: import("@pqc/shared").AstNode };
+      const astRoot = project.latestAst as import("@pqc/shared").AstRoot;
       const demoMode = request.query.demoMode === "true";
 
       try {
-        const compiled = compileAstToSite(astRoot.root, project.name, {
+        const compiled = compileAstToSite(astRoot, project.name, {
           demoMode,
           apiBase: `http://localhost:${config.port}`,
         });
@@ -68,11 +68,11 @@ export async function exportRoutes(app: FastifyInstance) {
         return reply.code(400).send({ message: "Invalid GitOps request" });
       }
 
-      const astRoot = project.latestAst as { root: import("@pqc/shared").AstNode };
+      const astRoot = project.latestAst as import("@pqc/shared").AstRoot;
       const demoMode = request.query.demoMode === "true";
 
       try {
-        const compiled = compileAstToSite(astRoot.root, project.name, {
+        const compiled = compileAstToSite(astRoot, project.name, {
           demoMode,
           apiBase: `http://localhost:${config.port}`,
         });

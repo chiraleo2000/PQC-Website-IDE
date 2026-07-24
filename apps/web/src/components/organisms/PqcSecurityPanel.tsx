@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { fetchSecurityAudit } from "../../api/auth";
 import { useEditorStore } from "../../stores/editorStore";
 import { Button } from "../atoms/Button";
 
@@ -12,6 +14,17 @@ export function PqcSecurityPanel() {
   const lastPublishedAt = useEditorStore((s) => s.lastPublishedAt);
   const requestAuthRetry = useEditorStore((s) => s.requestAuthRetry);
   const setUiMode = useEditorStore((s) => s.setUiMode);
+  const [audit, setAudit] = useState<
+    Array<{ event: string; priority: string; at: string }>
+  >([]);
+
+  useEffect(() => {
+    if (!authToken) {
+      setAudit([]);
+      return;
+    }
+    void fetchSecurityAudit(authToken, 12).then(setAudit);
+  }, [authToken, lastSyncedAt, cryptoStatus]);
 
   const kemShort = kemPublicKeyB64
     ? `${kemPublicKeyB64.slice(0, 18)}…${kemPublicKeyB64.slice(-8)}`
@@ -44,9 +57,38 @@ export function PqcSecurityPanel() {
           />
         </dl>
 
+        <div className="mt-8" data-testid="pqc-audit-log">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-ink-muted">
+            Recent security events
+          </h2>
+          {audit.length === 0 ? (
+            <p className="mt-2 text-sm text-ink-muted">No audit events for this session yet.</p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {audit.map((e) => (
+                <li
+                  key={`${e.at}-${e.event}`}
+                  className="rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm"
+                >
+                  <span
+                    className={
+                      e.priority === "HIGH" ? "font-semibold text-amber-800" : "text-ink"
+                    }
+                  >
+                    {e.event}
+                  </span>
+                  <span className="ml-2 text-xs text-ink-muted">{new Date(e.at).toLocaleString()}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
         {cryptoError && (
           <p className="mt-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="alert">
-            {cryptoError}
+            {cryptoError.includes("revok") || cryptoError.includes("403")
+              ? "Session revoked — retry PQC session or sign in again."
+              : cryptoError}
           </p>
         )}
 

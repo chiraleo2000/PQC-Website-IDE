@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { ensureAstV2, loadTemplate } from "@pqc/shared";
 import { compileAstToSite, CompilerSecurityError } from "./ast-to-code.js";
 import { compiledSiteFiles, validateGitRemote, GitOpsError } from "./package-export.js";
 
@@ -121,6 +122,15 @@ describe("AST compiler XSS", () => {
     expect(names).toContain("demo-app.js");
     expect(names).toContain("robots.txt");
     expect(names).toContain("sitemap.xml");
+  });
+
+  it("compiles multi-page landing template to multiple HTML files", () => {
+    const site = compileAstToSite(ensureAstV2(loadTemplate("landing")), "Landing", {});
+    const names = compiledSiteFiles(site).map((f) => f.name);
+    expect(names).toContain("index.html");
+    expect(names).toContain("about.html");
+    expect(site.sitemapXml).toContain("about.html");
+    expect(site.pages.length).toBeGreaterThanOrEqual(2);
   });
 });
 

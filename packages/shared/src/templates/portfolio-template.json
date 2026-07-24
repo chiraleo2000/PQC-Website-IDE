@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "root": {
+    "id": "c1000000-0000-4000-8000-000000000001",
+    "type": "section",
+    "props": { "className": "min-h-screen bg-stone-50 text-stone-900" },
+    "children": [
+      {
+        "id": "c1000000-0000-4000-8000-000000000002",
+        "type": "header",
+        "props": { "className": "px-8 py-8 border-b border-stone-200", "children": "Studio portfolio" },
+        "children": []
+      },
+      {
+        "id": "c1000000-0000-4000-8000-000000000003",
+        "type": "main",
+        "props": { "className": "px-8 py-12 grid gap-8 md:grid-cols-2" },
+        "children": [
+          {
+            "id": "c1000000-0000-4000-8000-000000000004",
+            "type": "div",
+            "props": { "className": "rounded-xl border border-stone-200 p-6 bg-white" },
+            "children": [
+              {
+                "id": "c1000000-0000-4000-8000-000000000005",
+                "type": "h2",
+                "props": { "className": "text-xl font-semibold", "children": "Case study A" },
+                "children": []
+              },
+              {
+                "id": "c1000000-0000-4000-8000-000000000006",
+                "type": "p",
+                "props": { "className": "mt-2 text-stone-600", "children": "Product site with hybrid-encrypted drafts." },
+                "children": []
+              }
+            ]
+          },
+          {
+            "id": "c1000000-0000-4000-8000-000000000007",
+            "type": "div",
+            "props": { "className": "rounded-xl border border-stone-200 p-6 bg-white" },
+            "children": [
+              {
+                "id": "c1000000-0000-4000-8000-000000000008",
+                "type": "h2",
+                "props": { "className": "text-xl font-semibold", "children": "Case study B" },
+                "children": []
+              },
+              {
+                "id": "c1000000-0000-4000-8000-000000000009",
+                "type": "p",
+                "props": { "className": "mt-2 text-stone-600", "children": "Docs portal exported as static HTML." },
+                "children": []
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

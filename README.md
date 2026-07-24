@@ -63,10 +63,16 @@ Machine-readable evidence: [`pqc-evidence.json`](apps/e2e/scripts/demo-shots/sel
 ## Features (current)
 
 - Visual builder: Templates, section presets (Hero / Nav / Footer / Form), style chips, undo/redo
+- **Multi-page sites** — page switcher, multi-HTML export + full `sitemap.xml`
+- Templates: Login, Blog, **Landing (2 pages)**, Portfolio, Docs
 - Light default theme + Dark toggle (`localStorage`)
 - Hybrid PQC save path: Worker → API gateway → Go crypto-service
+- **Auth:** Argon2 register/login, gated `dev-register`, OIDC hooks (501 until configured)
+- **Postgres dual-write** when `DATABASE_URL` is set (users, keys, versions, audit)
+- PQC Security panel with **recent audit events**
 - Publish with ML-DSA-signed intent; Preview modal
 - Export ZIP: HTML + CSS + SEO meta / Open Graph + `robots.txt` + `sitemap.xml`
+- E2E browsers: Chromium + Firefox + WebKit (+ Edge on Windows)
 - Security tests for HNDL (accept hybrid PQC; reject classical-only / forgery)
 
 ---
@@ -175,14 +181,71 @@ archive/              # Legacy PQC cyber-attack simulator (education)
 
 ---
 
-## Contributing & roadmap
+## Auth modes
 
-This repository is **early / in development**. Expected areas of work:
+| Mode | When | Behavior |
+|------|------|----------|
+| `VITE_AUTH_MODE=dev` (default local) | `ALLOW_DEV_REGISTER` not false | Silent `dev-register` bootstrap |
+| `VITE_AUTH_MODE=login` (Docker default) | Production-ish | Login / register UI (Argon2) |
+| OIDC hooks | `OIDC_*` + `VITE_OIDC_ENABLED=true` | `/api/auth/oidc/login` redirect; callback stub until IdP wiring |
 
-- Hardening hybrid crypto UX and audit logging
-- Broader browser QA (Chrome, Firefox, Safari, Edge)
-- Richer templates / multi-page sites
-- Production auth beyond local `dev-register`
+## Roadmap progress (core gaps)
+
+### Phase 1 — Persistence, auth, audit — **done**
+Argon2 register/login, gated `dev-register`, OIDC stubs, Postgres dual-write, audit API + panel.
+
+![Phase 1 IDE shell](docs/images/phase1-shell.png)
+![Phase 1 PQC / audit panel](docs/images/phase1-pqc-audit.png)
+![Phase 1 hybrid sync assert](docs/images/phase1-sync-assert.png)
+
+### Phase 2 — Multi-page + templates — **done**
+AstRoot v2 pages, Landing/Portfolio/Docs templates, page switcher, multi-file ZIP + sitemap.
+
+![Phase 2 templates](docs/images/phase2-templates.png)
+![Phase 2 builder](docs/images/phase2-builder-pages.png)
+![Phase 2 export](docs/images/phase2-export.png)
+
+### Phase 3 — Multi-browser QA — **done**
+Playwright projects: Chromium, Firefox, WebKit; Edge on Windows; CI matrix for `ide-save-flow`.
+
+![Phase 3 Chromium shell](docs/images/phase3-chromium.png)
+![Phase 3 preview](docs/images/phase3-preview-matrix.png)
+
+### Current state (verified)
+
+| Suite | Result |
+|-------|--------|
+| `@pqc/shared` unit | 47 passed |
+| `@pqc/api-gateway` unit | 73 passed |
+| `@pqc/web` unit | 88 passed |
+| Security / HNDL (live API) | 18 passed |
+| Headed Selenium UI + wire proof | PASS (`apps/e2e/scripts/demo-shots/selenium/pqc-evidence.json`) |
+
+**Solid today:** hybrid sync (ML-KEM-768 + X25519 + AES-GCM + ML-DSA-65), multi-page AST/export, Argon2 auth + gated `dev-register`, audit list UI, Chromium/Firefox/WebKit CI projects, Selenium functional proof.
+
+### Gaps to fix later
+
+| Gap | Why it matters | Suggested next step |
+|-----|----------------|---------------------|
+| Postgres is dual-write only (memory is still hot path) | Restart loses sessions unless PG hydrate is finished | Boot-time hydrate from PG; make PG primary when `DATABASE_URL` set |
+| Token revocation / nonces in-memory | Multi-instance deploy can miss revokes | Persist revoked JWTs + nonces in Postgres (or Redis) |
+| OIDC is stub (501 / redirect only) | No real IdP login yet | Complete code exchange + `oidc_subject` user upsert |
+| Password users not rate-limited / locked out | Brute-force on `/login` | Add rate limit + lockout on auth routes |
+| Schema vs runtime drift residual | Keys/audit richer in memory than some ops | Keep Drizzle schema + migrate SQL as single source |
+| GitOps export incomplete | ZIP works; remote push not productized | Finish signed Git push + credential UX |
+| Virtual canvas DnD at 1000+ nodes | Large trees may drop poorly | Wire dnd-kit over virtualized rows |
+| Full OIDC UI + login-mode E2E | Selenium/dev path uses `VITE_AUTH_MODE=dev` | Add Playwright login-mode project |
+| Edge CI on Linux | No `msedge` channel on Ubuntu runners | Keep Edge Windows-local; document matrix |
+
+### Recommended next steps (priority)
+
+1. **Postgres-primary store** — hydrate on boot; drop silent memory-only production mode.
+2. **Finish OIDC** — real callback + tests; disable password/`dev-register` via flags in prod.
+3. **Auth hardening** — rate limits, lockout, Argon2 params audit, secure cookie/refresh option.
+4. **Login-mode E2E + Selenium** — cover AuthGate register/login in CI.
+5. **GitOps** — end-to-end push of compiled multi-page sites to a protected remote.
+
+## Contributing
 
 Issues and PRs are welcome. Please do **not** commit secrets (`.env`, JWT keys, crypto service secrets).
 

@@ -11,6 +11,7 @@ import {
 } from "../test/mocks/configure-pqc-mocks";
 
 vi.mock("../api/auth", () => ({
+  getAuthMode: () => "dev" as const,
   registerDevSession: vi.fn().mockResolvedValue({
     token: "tok",
     signerPublicKeyId: "550e8400-e29b-41d4-a716-446655440011",
@@ -94,7 +95,7 @@ describe("WorkspaceLayout", () => {
 
     const payload = mockEncryptAndSignAst.mock.calls[0]?.[0];
     expect(payload?.projectId).toBe(useEditorStore.getState().projectId);
-    expect(payload?.astJson).toContain('"version":1');
+    expect(payload?.astJson).toContain('"version":2');
     expect(globalThis.fetch).toHaveBeenCalled();
   });
 

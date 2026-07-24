@@ -21,6 +21,7 @@
     "@noble/curves": "^2.2.0",
     "@noble/hashes": "^2.2.0",
     "@noble/post-quantum": "^0.4.0",
+    "@node-rs/argon2": "^2.0.2",
     "@pqc/shared": "workspace:*",
     "archiver": "^7.0.1",
     "drizzle-orm": "^0.38.3",

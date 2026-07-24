@@ -68,7 +68,8 @@ const DANGEROUS_PATTERNS = [
   /on\w+\s*=/i,
   /data:text\/html/i,
   /expression\s*\(/i,
-  /url\s*\(\s*['"]?\s*javascript/i,
+  // Bounded whitespace avoids super-linear backtracking (S8786).
+  /url\s{0,10}\(\s{0,20}['"]?\s{0,20}javascript/i,
   /@import/i,
 ];
 
@@ -91,22 +92,22 @@ export function assertSafeContent(text: string, context: string): void {
 export function sanitizeText(text: string): string {
   assertSafeContent(text, "text");
   return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 /** JSX string literal escape (no HTML entities). */
 export function sanitizeJsxText(text: string): string {
   assertSafeContent(text, "jsx text");
   return text
-    .replace(/\\/g, "\\\\")
-    .replace(/`/g, "\\`")
-    .replace(/\$/g, "\\$")
-    .replace(/\r/g, "")
-    .replace(/\n/g, "\\n");
+    .replaceAll("\\", String.raw`\\`)
+    .replaceAll("`", String.raw`\``)
+    .replaceAll("$", String.raw`\$`)
+    .replaceAll("\r", "")
+    .replaceAll("\n", String.raw`\n`);
 }
 
 export function sanitizeClassName(className: string): string {
@@ -124,7 +125,13 @@ export function sanitizeUrl(url: string, attr: string): string {
   const trimmed = url.trim();
   if (!trimmed || trimmed === "#") return "#";
   assertSafeContent(trimmed, attr);
-  if (!/^https?:\/\//i.test(trimmed) && !trimmed.startsWith("/") && !trimmed.startsWith("#")) {
+  const relativeHtml = /^[a-z0-9-]+\.html(?:#.*)?$/i.test(trimmed);
+  if (
+    !/^https?:\/\//i.test(trimmed) &&
+    !trimmed.startsWith("/") &&
+    !trimmed.startsWith("#") &&
+    !relativeHtml
+  ) {
     throw new CompilerSecurityError(`URL not allowed for ${attr}`);
   }
   return trimmed;

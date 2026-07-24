@@ -21,6 +21,8 @@ const gatewayEnv = {
   CRYPTO_USE_GO: process.env.CRYPTO_USE_GO ?? "true",
   ENFORCE_PQC_ONLY: "true",
   JWT_SECRET: process.env.JWT_SECRET ?? "e2e-jwt-secret-min-32-characters-long",
+  ALLOW_DEV_REGISTER: process.env.ALLOW_DEV_REGISTER ?? "true",
+  NODE_ENV: process.env.NODE_ENV ?? "test",
   ...(process.env.DATABASE_URL ? { DATABASE_URL: process.env.DATABASE_URL } : {}),
 };
 
@@ -77,6 +79,25 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
       testIgnore: /compiled-blog-app|pqc-demo-visual/,
     },
+    {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
+      testMatch: /ide-save-flow/,
+    },
+    {
+      name: "webkit",
+      use: { ...devices["Desktop Safari"] },
+      testMatch: /ide-save-flow/,
+    },
+    ...(process.platform === "win32"
+      ? [
+          {
+            name: "edge",
+            use: { ...devices["Desktop Edge"], channel: "msedge" as const },
+            testMatch: /ide-save-flow/,
+          },
+        ]
+      : []),
     {
       name: "demo",
       timeout: 300_000,
