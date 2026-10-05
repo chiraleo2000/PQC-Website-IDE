@@ -3,6 +3,7 @@ import {
   canonicalIntentSignBytes,
   canonicalSignBytes,
   combineHybridAesKey,
+  DEFAULT_SITE_FUNCTIONS,
   encryptedAstPayloadSchema,
   fromBase64,
   generateX25519Keypair,
@@ -161,6 +162,26 @@ describe("canonical sign bytes", () => {
     const a = canonicalIntentSignBytes(fields);
     const b = canonicalIntentSignBytes(fields);
     expect(Buffer.from(a).equals(b)).toBe(true);
+  });
+
+  it("covers the function manifest and ignores field order", () => {
+    const fields = {
+      projectId: base.projectId,
+      action: "publish" as const,
+      nonce: base.nonce,
+      timestamp: base.timestamp,
+    };
+    const without = canonicalIntentSignBytes(fields);
+    const withFns = canonicalIntentSignBytes({ ...fields, functions: DEFAULT_SITE_FUNCTIONS });
+    const reordered = canonicalIntentSignBytes({
+      ...fields,
+      functions: [...DEFAULT_SITE_FUNCTIONS].reverse().map((fn) => ({
+        ...fn,
+        fields: [...fn.fields].reverse(),
+      })),
+    });
+    expect(Buffer.from(without).equals(withFns)).toBe(false);
+    expect(Buffer.from(withFns).equals(reordered)).toBe(true);
   });
 
   it("sync envelope bytes are stable and cover classicalKem", () => {

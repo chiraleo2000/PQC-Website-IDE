@@ -115,4 +115,70 @@ describe("auth routes", () => {
     expect(audit.statusCode).toBe(200);
     expect(audit.json()).toHaveProperty("events");
   });
+
+  it("locks an account after five bad passwords", async () => {
+    process.env.AUTH_RATE_LIMIT_MAX = "30";
+    try {
+      const app = await buildApp();
+      const email = `lock-${Date.now()}@test.local`;
+      const password = "secure-password-12";
+      const reg = await app.inject({
+        method: "POST",
+        url: "/api/auth/register",
+        payload: { email, password },
+      });
+      expect(reg.statusCode).toBe(201);
+
+      for (let i = 0; i < 4; i++) {
+        const bad = await app.inject({
+          method: "POST",
+          url: "/api/auth/login",
+          payload: { email, password: "wrong-password!!" },
+        });
+        expect(bad.statusCode).toBe(401);
+      }
+      const locked = await app.inject({
+        method: "POST",
+        url: "/api/auth/login",
+        payload: { email, password: "wrong-password!!" },
+      });
+      expect(locked.statusCode).toBe(429);
+      expect((locked.json() as { message: string }).message).toMatch(/locked/i);
+    } finally {
+      delete process.env.AUTH_RATE_LIMIT_MAX;
+    }
+  });
+
+  it("clears the lockout counter after a successful login", async () => {
+    process.env.AUTH_RATE_LIMIT_MAX = "30";
+    try {
+      const app = await buildApp();
+      const email = `clear-${Date.now()}@test.local`;
+      const password = "secure-password-12";
+      await app.inject({
+        method: "POST",
+        url: "/api/auth/register",
+        payload: { email, password },
+      });
+      await app.inject({
+        method: "POST",
+        url: "/api/auth/login",
+        payload: { email, password: "wrong-password!!" },
+      });
+      const ok = await app.inject({
+        method: "POST",
+        url: "/api/auth/login",
+        payload: { email, password },
+      });
+      expect(ok.statusCode).toBe(200);
+      const bad = await app.inject({
+        method: "POST",
+        url: "/api/auth/login",
+        payload: { email, password: "wrong-password!!" },
+      });
+      expect(bad.statusCode).toBe(401);
+    } finally {
+      delete process.env.AUTH_RATE_LIMIT_MAX;
+    }
+  });
 });

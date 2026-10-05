@@ -56,6 +56,15 @@ describe("editorStore", () => {
     ).toHaveLength(0);
   });
 
+  it("records the live URL and clears it for a new project", () => {
+    useEditorStore.getState().markPublished("2026-01-01T00:00:00.000Z", "https://blog.pages.dev");
+    expect(useEditorStore.getState().publishedUrl).toBe("https://blog.pages.dev");
+    expect(useEditorStore.getState().cryptoStatus).toBe("saved");
+    useEditorStore.getState().newProject();
+    expect(useEditorStore.getState().publishedUrl).toBeNull();
+    expect(useEditorStore.getState().projectName).toBe("Untitled Site");
+  });
+
   it("removes selected node", () => {
     const root = useEditorStore.getState().ast.root;
     const target = root.children[0];

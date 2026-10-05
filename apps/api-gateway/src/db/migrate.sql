@@ -56,3 +56,26 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS oidc_subject TEXT;
 ALTER TABLE signing_keys ADD COLUMN IF NOT EXISTS x25519_public_key_b64 TEXT NOT NULL DEFAULT '';
 ALTER TABLE signing_keys ADD COLUMN IF NOT EXISTS x25519_secret_key_b64 TEXT NOT NULL DEFAULT '';
 ALTER TABLE security_audit_logs ADD COLUMN IF NOT EXISTS priority TEXT NOT NULL DEFAULT 'NORMAL';
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS latest_ast JSONB;
+
+CREATE TABLE IF NOT EXISTS revoked_tokens (
+  token_hash TEXT PRIMARY KEY,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS login_lockouts (
+  email TEXT PRIMARY KEY,
+  failures INTEGER NOT NULL DEFAULT 0,
+  locked_until TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS deployments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL REFERENCES projects(id),
+  pages_project_name TEXT NOT NULL,
+  https_url TEXT,
+  signed_manifest JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

@@ -17,6 +17,7 @@ import {
   type AuthSession,
 } from "../api/auth";
 import { generateSignKeypair } from "../crypto/pqcClient";
+import { checkApiHealth } from "../api/health";
 import { useEditorStore, type ToastTone } from "../stores/editorStore";
 
 const MAX_AUTH_ATTEMPTS = 3;
@@ -111,6 +112,43 @@ export function WorkspaceLayout() {
       setLoginPending(!authToken);
     }
   }, [authMode, authToken]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let wasDown = false;
+    let failures = 0;
+
+    async function ping() {
+      const up = await checkApiHealth();
+      if (cancelled) return;
+      const state = useEditorStore.getState();
+      if (up) {
+        failures = 0;
+        if (wasDown) {
+          wasDown = false;
+          if (!state.authToken) state.requestAuthRetry();
+          else if (state.cryptoError === "API disconnected") {
+            state.setCryptoStatus(state.lastPublishedAt ? "saved" : "ready");
+          }
+        }
+        return;
+      }
+      failures += 1;
+      wasDown = true;
+      if (failures < 2) return;
+      if (state.cryptoStatus === "saving" || state.cryptoStatus === "publishing" || state.cryptoStatus === "encrypting") {
+        return;
+      }
+      state.setCryptoStatus("error", "API disconnected");
+    }
+
+    void ping();
+    const timer = window.setInterval(() => void ping(), 15_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, []);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {

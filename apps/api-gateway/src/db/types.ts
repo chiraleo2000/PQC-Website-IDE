@@ -23,6 +23,19 @@ export interface ProjectRecord {
   latestAst?: unknown;
 }
 
+export interface LoginLockoutRecord {
+  failures: number;
+  lockedUntil: string | null;
+}
+
+export interface DeploymentRecord {
+  projectId: string;
+  pagesProjectName: string;
+  httpsUrl: string | null;
+  manifest: unknown;
+  createdAt: string;
+}
+
 export type AuditPriority = "HIGH" | "NORMAL";
 
 export interface AuditEntry {

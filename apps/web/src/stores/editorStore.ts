@@ -140,6 +140,7 @@ interface EditorState {
   dirty: boolean;
   lastSyncedAt: string | null;
   lastPublishedAt: string | null;
+  publishedUrl: string | null;
   projectIndex: ProjectIndexEntry[];
   toasts: ToastItem[];
   past: HistorySnapshot[];
@@ -172,7 +173,7 @@ interface EditorState {
   switchProject: (id: string) => void;
   persistCurrentProject: () => void;
   markSynced: () => void;
-  markPublished: (publishedAt: string) => void;
+  markPublished: (publishedAt: string, publishedUrl?: string | null) => void;
   setActivePageId: (pageId: string) => void;
   addPage: (title: string, slug: string) => void;
   removePage: (pageId: string) => void;
@@ -221,6 +222,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   dirty: false,
   lastSyncedAt: null,
   lastPublishedAt: null,
+  publishedUrl: null,
   projectIndex: typeof localStorage !== "undefined" ? readProjectIndex() : [],
   toasts: [],
   past: [],
@@ -346,6 +348,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       dirty: true,
       lastSyncedAt: null,
       lastPublishedAt: null,
+      publishedUrl: null,
       uiMode: "builder",
       cryptoStatus: get().authToken ? "ready" : get().cryptoStatus,
       future: [],
@@ -442,8 +445,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     get().persistCurrentProject();
   },
 
-  markPublished: (publishedAt) => {
-    set({ lastPublishedAt: publishedAt, cryptoStatus: "saved" });
+  markPublished: (publishedAt, publishedUrl = null) => {
+    set({ lastPublishedAt: publishedAt, publishedUrl, cryptoStatus: "saved" });
     get().persistCurrentProject();
   },
 
@@ -513,6 +516,7 @@ export function useProjectMeta() {
       dirty: s.dirty,
       lastSyncedAt: s.lastSyncedAt,
       lastPublishedAt: s.lastPublishedAt,
+      publishedUrl: s.publishedUrl,
     }))
   );
 }

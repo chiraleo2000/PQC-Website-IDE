@@ -37,8 +37,26 @@ export const config = {
   /** Stricter cap on POST /sync (expensive ML-KEM / ML-DSA per request). */
   syncRateLimitMax: Number(process.env.SYNC_RATE_LIMIT_MAX ?? 30),
   syncRateLimitWindowMs: Number(process.env.SYNC_RATE_LIMIT_WINDOW_MS ?? 60_000),
+  get authRateLimitMax() {
+    return Number(process.env.AUTH_RATE_LIMIT_MAX ?? 5);
+  },
+  get authRateLimitWindowMs() {
+    return Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS ?? 15 * 60 * 1000);
+  },
+  get loginMaxFailures() {
+    return Number(process.env.LOGIN_MAX_FAILURES ?? 5);
+  },
+  get loginLockoutMs() {
+    return Number(process.env.LOGIN_LOCKOUT_MS ?? 15 * 60 * 1000);
+  },
   get databaseUrl() {
     return process.env.DATABASE_URL ?? "";
+  },
+  get cloudflareApiToken() {
+    return process.env.CLOUDFLARE_API_TOKEN ?? "";
+  },
+  get cloudflareAccountId() {
+    return process.env.CLOUDFLARE_ACCOUNT_ID ?? "";
   },
   gitOpsEnabled: process.env.GIT_OPS_ENABLED === "true",
   gitOpsDefaultToken: process.env.GIT_OPS_TOKEN ?? "",

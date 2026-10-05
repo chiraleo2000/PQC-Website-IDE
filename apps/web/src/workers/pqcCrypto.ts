@@ -9,6 +9,7 @@ import {
   canonicalIntentSignBytes,
   canonicalSignBytes,
   combineHybridAesKey,
+  DEFAULT_SITE_FUNCTIONS,
   countNodes,
   generateX25519Keypair,
   toBase64,
@@ -138,6 +139,7 @@ export function signPublishIntentPayload(params: {
     action: "publish",
     nonce: crypto.randomUUID(),
     timestamp: new Date().toISOString(),
+    functions: DEFAULT_SITE_FUNCTIONS,
   };
   const sig = signMlDsaIntent(params.signerSecretKey, fields);
   return {

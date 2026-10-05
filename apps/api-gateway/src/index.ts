@@ -1,6 +1,7 @@
 import { config } from "./config.js";
 import { buildApp } from "./app.js";
 import { buildDemoApp, demoListenPort } from "./demo-app.js";
+import { hydrateMemoryFromPostgres } from "./db/hydrate.js";
 import { initPersistence } from "./db/persistence.js";
 
 const demoOnly =
@@ -12,6 +13,7 @@ if (demoOnly) {
   console.log(`Demo API listening on :${demoListenPort}`);
 } else {
   await initPersistence();
+  await hydrateMemoryFromPostgres();
   const app = await buildApp();
   await app.listen({ port: config.port, host: "0.0.0.0" });
   console.log(

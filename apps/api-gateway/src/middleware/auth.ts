@@ -3,6 +3,12 @@ import jwt from "jsonwebtoken";
 import { config } from "../config.js";
 import { memoryStore } from "../db/memory-store.js";
 
+function tokenExpiry(token: string): Date {
+  const decoded = jwt.decode(token) as { exp?: number } | null;
+  if (decoded?.exp) return new Date(decoded.exp * 1000);
+  return new Date(Date.now() + 8 * 60 * 60 * 1000);
+}
+
 export interface JwtPayload {
   sub: string;
   email: string;
@@ -18,7 +24,7 @@ export async function authenticate(
     return;
   }
   const token = header.slice(7);
-  if (memoryStore.revokedTokens.has(token)) {
+  if (memoryStore.isTokenRevoked(token)) {
     reply.code(401).send({ message: "Unauthorized" });
     return;
   }
@@ -38,5 +44,5 @@ declare module "fastify" {
 }
 
 export function revokeToken(token: string) {
-  memoryStore.revokedTokens.add(token);
+  memoryStore.revokeToken(token, tokenExpiry(token));
 }

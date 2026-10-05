@@ -23,4 +23,6 @@ vi.mock("../services/crypto-client.js", () => ({
 beforeEach(() => {
   memoryStore.resetForTests();
   vi.clearAllMocks();
+  delete process.env.CLOUDFLARE_API_TOKEN;
+  delete process.env.CLOUDFLARE_ACCOUNT_ID;
 });

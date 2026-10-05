@@ -7,6 +7,21 @@ import {
 
 const API = import.meta.env.VITE_API_URL ?? "";
 
+function isNetworkError(error: unknown): boolean {
+  if (error instanceof TypeError) return true;
+  return error instanceof Error && /failed to fetch|network/i.test(error.message);
+}
+
+/** One retry for a dropped connection. HTTP error responses are not retried. */
+async function fetchWithRetry(input: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (error) {
+    if (!isNetworkError(error)) throw error;
+    return await fetch(input, init);
+  }
+}
+
 export async function syncProject(params: {
   projectId: string;
   ast: AstRoot;
@@ -14,6 +29,7 @@ export async function syncProject(params: {
   signerPublicKeyId: string;
   serverKemPublicKeyB64: string;
   serverX25519PublicKeyB64: string;
+  projectName?: string;
 }): Promise<void> {
   const payload = await encryptAndSignAst({
     astJson: JSON.stringify(params.ast),
@@ -25,11 +41,14 @@ export async function syncProject(params: {
   });
 
   try {
-    const res = await fetch(`${API}/api/projects/${params.projectId}/sync`, {
+    const res = await fetchWithRetry(`${API}/api/projects/${params.projectId}/sync`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${params.authToken}`,
+        ...(params.projectName
+          ? { "X-Project-Name": encodeURIComponent(params.projectName) }
+          : {}),
       },
       body: JSON.stringify(payload),
     });
@@ -54,7 +73,7 @@ export async function exportProjectZip(params: {
 }): Promise<void> {
   try {
     const qs = params.demoMode ? "?demoMode=true" : "";
-    const res = await fetch(`${API}/api/projects/${params.projectId}/export${qs}`, {
+    const res = await fetchWithRetry(`${API}/api/projects/${params.projectId}/export${qs}`, {
       method: "GET",
       headers: {
         Authorization: `Bearer ${params.authToken}`,
@@ -93,7 +112,14 @@ export async function publishProject(params: {
   projectId: string;
   authToken: string;
   signerPublicKeyId: string;
-}): Promise<{ ok: boolean; publishedAt: string }> {
+  projectName?: string;
+}): Promise<{
+  ok: boolean;
+  publishedAt: string;
+  url?: string | null;
+  httpsConfigured?: boolean;
+  notice?: string;
+}> {
   const intent = await signPublishIntent({
     projectId: params.projectId,
     signerPublicKeyId: params.signerPublicKeyId,
@@ -101,11 +127,14 @@ export async function publishProject(params: {
   });
 
   try {
-    const res = await fetch(`${API}/api/projects/${params.projectId}/publish`, {
+    const res = await fetchWithRetry(`${API}/api/projects/${params.projectId}/publish`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${params.authToken}`,
+        ...(params.projectName
+          ? { "X-Project-Name": encodeURIComponent(params.projectName) }
+          : {}),
       },
       body: JSON.stringify(intent),
     });
@@ -116,7 +145,13 @@ export async function publishProject(params: {
       throw new Error((body as { message?: string }).message ?? `Publish failed: ${res.status}`);
     }
 
-    return res.json() as Promise<{ ok: boolean; publishedAt: string }>;
+    return res.json() as Promise<{
+      ok: boolean;
+      publishedAt: string;
+      url?: string | null;
+      httpsConfigured?: boolean;
+      notice?: string;
+    }>;
   } catch (e) {
     if (e instanceof Error && e.message.startsWith("Publish failed:")) throw e;
     console.error("[PQC Projects] Network error during publish:", e);

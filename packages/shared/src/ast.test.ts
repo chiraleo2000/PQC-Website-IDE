@@ -1,16 +1,24 @@
 import { describe, it, expect } from "vitest";
 import {
+  addSitePage,
   astNodeSchema,
   astRootSchema,
   cloneAst,
   countNodes,
   createDefaultRoot,
-  insertChild,
   createNode,
+  ensureAstV2,
   findNode,
   findParent,
+  getActivePage,
+  getActiveRoot,
+  insertChild,
   removeNode,
+  removeSitePage,
+  renameSitePage,
+  setActivePage,
   updateNodeProps,
+  withActiveRoot,
 } from "./ast.js";
 import { loadTemplate } from "./templates.js";
 
@@ -140,6 +148,51 @@ describe("ast tree helpers", () => {
     expect(cloned).not.toBe(root.root);
     cloned.children[0].props.className = "mutated";
     expect(root.root.children[0].props.className).not.toBe("mutated");
+  });
+});
+
+describe("multi-page helpers", () => {
+  it("reads and replaces the active page root", () => {
+    const root = createDefaultRoot();
+    expect(getActivePage(root).id).toBe(root.activePageId);
+    expect(getActiveRoot(root).id).toBe(root.root.id);
+    const nextRoot = createNode("section");
+    const updated = withActiveRoot(root, nextRoot);
+    expect(getActiveRoot(updated).id).toBe(nextRoot.id);
+  });
+
+  it("adds, switches, renames, and removes pages", () => {
+    const root = createDefaultRoot();
+    const added = addSitePage(root, {
+      slug: "about",
+      title: "About",
+      root: createNode("section"),
+    });
+    expect(added.pages).toHaveLength(2);
+    expect(getActivePage(added).slug).toBe("about");
+
+    const switched = setActivePage(added, added.pages[0]!.id);
+    expect(switched.activePageId).toBe(added.pages[0]!.id);
+    expect(setActivePage(added, "missing-page").activePageId).toBe(added.activePageId);
+
+    const renamed = renameSitePage(switched, switched.pages[1]!.id, {
+      title: "About us",
+      slug: "about-us",
+    });
+    expect(renamed.pages[1]?.slug).toBe("about-us");
+
+    const removed = removeSitePage(renamed, renamed.pages[1]!.id);
+    expect(removed.pages).toHaveLength(1);
+    expect(removeSitePage(removed, removed.pages[0]!.id).pages).toHaveLength(1);
+  });
+
+  it("upgrades a v1 root into a single index page", () => {
+    const current = createDefaultRoot();
+    const v1 = { version: 1 as const, root: current.root };
+    const v2 = ensureAstV2(v1);
+    expect(v2.version).toBe(2);
+    expect(v2.pages[0]?.slug).toBe("index");
+    expect(getActivePage(v2).root.id).toBe(current.root.id);
   });
 });
 

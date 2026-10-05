@@ -21,6 +21,7 @@ export function TopBar() {
   const meta = useProjectMeta();
   const {
     projectName,
+    publishedUrl,
     cryptoStatus,
     cryptoError,
     projectId,
@@ -42,7 +43,12 @@ export function TopBar() {
   const canUndo = useEditorStore((s) => s.past.length > 0);
   const canRedo = useEditorStore((s) => s.future.length > 0);
   const ast = useEditorStore((s) => s.ast);
-  const status = statusLabels[cryptoStatus];
+  const status =
+    cryptoError === "API disconnected"
+      ? { label: "API disconnected", tone: "warning" as const }
+      : statusLabels[cryptoStatus];
+  const connectionLabel =
+    cryptoError === "API disconnected" ? "API disconnected" : authToken ? "Connected" : "Connecting";
   const cryptoReady = Boolean(authToken && signerPublicKeyId && kemPublicKeyB64 && x25519PublicKeyB64);
   const busy =
     cryptoStatus === "saving" ||
@@ -64,6 +70,7 @@ export function TopBar() {
         signerPublicKeyId,
         serverKemPublicKeyB64: kemPublicKeyB64,
         serverX25519PublicKeyB64: x25519PublicKeyB64,
+        projectName,
       });
       markSynced();
       pushToast({
@@ -94,14 +101,34 @@ export function TopBar() {
         projectId,
         authToken,
         signerPublicKeyId,
+        projectName,
       });
-      markPublished(result.publishedAt);
-      pushToast({
-        tone: "success",
-        message: `Published ${new Date(result.publishedAt).toLocaleString()}`,
-        actionLabel: "Preview",
-        action: () => setPreviewOpen(true),
-      });
+      const publishedAt = result.publishedAt ?? new Date().toISOString();
+      markPublished(publishedAt, result.url ?? null);
+      if (result.url) {
+        pushToast({
+          tone: "success",
+          message: `Live at ${result.url}`,
+          actionLabel: "Copy link",
+          action: () => {
+            void navigator.clipboard?.writeText(result.url!);
+          },
+        });
+      } else if (result.httpsConfigured === false) {
+        pushToast({
+          tone: "success",
+          message: "Published. HTTPS publish needs a Cloudflare API token on the server.",
+          actionLabel: "Preview",
+          action: () => setPreviewOpen(true),
+        });
+      } else {
+        pushToast({
+          tone: "success",
+          message: `Published ${new Date(publishedAt).toLocaleString()}`,
+          actionLabel: "Preview",
+          action: () => setPreviewOpen(true),
+        });
+      }
       setPreviewOpen(true);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Publish failed";
@@ -173,6 +200,26 @@ export function TopBar() {
         >
           Redo
         </Button>
+        <span className="text-xs text-ink-muted" data-testid="connection-status">
+          {connectionLabel}
+        </span>
+        {publishedUrl && (
+          <>
+            <span className="hidden max-w-[14rem] truncate text-xs text-ink-muted sm:inline" data-testid="live-url">
+              Live at {publishedUrl}
+            </span>
+            <Button
+              variant="ghost"
+              data-testid="copy-live-url"
+              aria-label="Copy live URL"
+              onClick={() => {
+                void navigator.clipboard?.writeText(publishedUrl);
+              }}
+            >
+              Copy link
+            </Button>
+          </>
+        )}
         <Badge label={status.label} tone={status.tone} data-testid="pqc-status-badge" />
         {cryptoError && (
           <span className="max-w-[12rem] truncate text-xs text-amber-600" role="alert" title={cryptoError}>
@@ -185,13 +232,18 @@ export function TopBar() {
           defaultValue=""
           onChange={(e) => {
             const v = e.target.value;
-            if (v === "login" || v === "blog") loadDemoTemplate(v);
+            if (v === "login" || v === "blog" || v === "landing" || v === "portfolio" || v === "docs") {
+              loadDemoTemplate(v);
+            }
             e.target.value = "";
           }}
         >
           <option value="">Load template…</option>
           <option value="login">Login page</option>
           <option value="blog">Blog feed</option>
+          <option value="landing">Landing</option>
+          <option value="portfolio">Portfolio</option>
+          <option value="docs">Docs</option>
         </select>
         <Button
           variant="ghost"

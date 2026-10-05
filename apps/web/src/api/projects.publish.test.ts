@@ -49,6 +49,29 @@ describe("publishProject", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("retries once when the connection drops and returns the live URL", async () => {
+    mockFetch
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          ok: true,
+          publishedAt: "2026-01-01T00:00:00.000Z",
+          url: "https://demo.pages.dev",
+          httpsConfigured: true,
+        }),
+      });
+
+    const result = await publishProject({
+      projectId: "550e8400-e29b-41d4-a716-446655440011",
+      authToken: "tok",
+      signerPublicKeyId: "550e8400-e29b-41d4-a716-446655440012",
+    });
+
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    expect(result.url).toBe("https://demo.pages.dev");
+  });
+
   it("logs and throws on HTTP failure", async () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     mockFetch.mockResolvedValue({

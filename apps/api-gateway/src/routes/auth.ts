@@ -51,7 +51,16 @@ export async function authRoutes(app: FastifyInstance) {
     });
   });
 
-  app.post("/api/auth/register", async (request, reply) => {
+  const authLimit = {
+    config: {
+      rateLimit: {
+        max: config.authRateLimitMax,
+        timeWindow: config.authRateLimitWindowMs,
+      },
+    },
+  };
+
+  app.post("/api/auth/register", authLimit, async (request, reply) => {
     const body = request.body as SessionBody;
     const email = body.email?.trim().toLowerCase();
     const password = body.password ?? "";
@@ -73,18 +82,36 @@ export async function authRoutes(app: FastifyInstance) {
     return reply.code(201).send(session);
   });
 
-  app.post("/api/auth/login", async (request, reply) => {
+  app.post("/api/auth/login", authLimit, async (request, reply) => {
     const body = request.body as SessionBody;
     const email = body.email?.trim().toLowerCase();
     const password = body.password ?? "";
     if (!email || !password) {
       return reply.code(400).send({ message: "Email and password required" });
     }
+    if (memoryStore.isLoginLocked(email)) {
+      await memoryStore.logSecurity(findUserByEmail(email)?.id, "LOGIN_LOCKED", { email }, "HIGH");
+      return reply.code(429).send({
+        message: "Account temporarily locked. Try again in 15 minutes.",
+      });
+    }
     const user = findUserByEmail(email);
     if (!user || !(await verifyPassword(user.passwordHash, password))) {
-      await memoryStore.logSecurity(user?.id, "LOGIN_FAILED", { email }, "HIGH");
+      const { locked } = await memoryStore.noteLoginFailure(email);
+      await memoryStore.logSecurity(
+        user?.id,
+        locked ? "LOGIN_LOCKED" : "LOGIN_FAILED",
+        { email },
+        "HIGH"
+      );
+      if (locked) {
+        return reply.code(429).send({
+          message: "Account temporarily locked. Try again in 15 minutes.",
+        });
+      }
       return reply.code(401).send({ message: "Invalid credentials" });
     }
+    await memoryStore.clearLoginFailures(email);
     const session = await mintSession(user.id, user.email);
     return reply.send(session);
   });

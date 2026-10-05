@@ -13,6 +13,7 @@ import { projectRoutes } from "./routes/projects.js";
 import { securityAuditRoutes } from "./routes/security-audit.js";
 import { gatewayCorsOptions } from "./lib/demo-cors.js";
 import { demoApiRoutes } from "./routes/demo-api/index.js";
+import { functionRoutes } from "./routes/functions.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -51,6 +52,7 @@ export async function buildApp() {
   await app.register(securityAuditRoutes);
   await app.register(projectRoutes);
   await app.register(exportRoutes);
+  await app.register(functionRoutes);
   await app.register(demoApiRoutes);
 
   app.setErrorHandler((error, _request, reply) => {

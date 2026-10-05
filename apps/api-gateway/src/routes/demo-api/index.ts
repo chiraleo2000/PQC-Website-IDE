@@ -1,6 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import jwt from "jsonwebtoken";
 import { config } from "../../config.js";
+import { memoryStore } from "../../db/memory-store.js";
+import { checkFunctionCall, manifestFromDeployment } from "../../lib/function-access.js";
 import { createDemoPost, listDemoPosts } from "../../services/demo-posts.js";
 import { demoLoginBodySchema, demoPostBodySchema } from "./schemas.js";
 
@@ -54,12 +56,26 @@ export async function demoApiRoutes(app: FastifyInstance) {
       });
 
       demo.post("/posts", async (request, reply) => {
-        const parsed = demoPostBodySchema.safeParse(request.body);
+        const parsed = demoPostBodySchema.strict().safeParse(request.body);
         if (!parsed.success) {
           return reply.code(400).send({
             message: "Invalid request body",
             issues: parsed.error.flatten().fieldErrors,
           });
+        }
+
+        const projectHeader = request.headers["x-project-id"];
+        const projectId = Array.isArray(projectHeader) ? projectHeader[0] : projectHeader;
+        if (projectId) {
+          const deployment = memoryStore.latestDeployment(projectId);
+          const check = checkFunctionCall(
+            manifestFromDeployment(deployment?.manifest),
+            "createPost",
+            parsed.data
+          );
+          if (!check.ok) {
+            return reply.code(check.status).send({ message: check.message });
+          }
         }
 
         const post = createDemoPost({

@@ -105,6 +105,7 @@ describe("pqcCrypto", () => {
     });
     expect(intent.action).toBe("publish");
     expect(intent.signature.algorithm).toBe("ML-DSA-65");
+    expect(intent.functions?.map((fn) => fn.name)).toEqual(["login", "createPost"]);
     expect(intent.nonce.length).toBeGreaterThanOrEqual(16);
     expect(intent.signature.value.length).toBeGreaterThan(16);
   });

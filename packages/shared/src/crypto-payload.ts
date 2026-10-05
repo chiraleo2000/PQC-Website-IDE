@@ -70,6 +70,23 @@ export function canonicalSignBytes(fields: SignablePayloadFields): Uint8Array {
   return new TextEncoder().encode(JSON.stringify(ordered));
 }
 
+/** Backend functions a published site may call. The publish signature covers this list. */
+export const SITE_FUNCTION_NAMES = ["login", "createPost"] as const;
+
+export const functionManifestEntrySchema = z.object({
+  name: z.enum(SITE_FUNCTION_NAMES),
+  method: z.literal("POST"),
+  fields: z.array(z.string().min(1).max(64)).min(1).max(16),
+});
+
+export type FunctionManifestEntry = z.infer<typeof functionManifestEntrySchema>;
+
+/** Default functions authorized when the IDE user signs a publish. */
+export const DEFAULT_SITE_FUNCTIONS: FunctionManifestEntry[] = [
+  { name: "login", method: "POST", fields: ["email", "password"] },
+  { name: "createPost", method: "POST", fields: ["title", "body"] },
+];
+
 /** Signed intent for state-mutating actions that do not carry a full encrypted AST (e.g. Publish). */
 export const stateMutatingIntentSchema = z.object({
   projectId: z.string().uuid(),
@@ -78,22 +95,33 @@ export const stateMutatingIntentSchema = z.object({
   timestamp: z.string().datetime(),
   signature: signatureBlockSchema,
   signerPublicKeyId: z.string().uuid(),
+  /** Present when the user signature also authorizes compiled-site backend functions. */
+  functions: z.array(functionManifestEntrySchema).max(8).optional(),
 });
 
 export type StateMutatingIntent = z.infer<typeof stateMutatingIntentSchema>;
 
 export type SignableIntentFields = Pick<
   StateMutatingIntent,
-  "projectId" | "action" | "nonce" | "timestamp"
+  "projectId" | "action" | "nonce" | "timestamp" | "functions"
 >;
 
 export function canonicalIntentSignBytes(fields: SignableIntentFields): Uint8Array {
-  const ordered = {
+  const ordered: Record<string, unknown> = {
     action: fields.action,
     nonce: fields.nonce,
     projectId: fields.projectId,
     timestamp: fields.timestamp,
   };
+  if (fields.functions && fields.functions.length > 0) {
+    ordered.functions = [...fields.functions]
+      .map((fn) => ({
+        fields: [...fn.fields].sort(),
+        method: fn.method,
+        name: fn.name,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
   return new TextEncoder().encode(JSON.stringify(ordered));
 }
 

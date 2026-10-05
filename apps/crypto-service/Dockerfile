@@ -1,5 +1,5 @@
 # Multi-stage: compile Go → distroless static (non-root)
-FROM golang:1.22-alpine AS build
+FROM golang:1.26-alpine AS build
 
 ENV GOTOOLCHAIN=auto
 RUN apk add --no-cache git ca-certificates

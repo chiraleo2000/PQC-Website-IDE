@@ -5,6 +5,7 @@ import {
   timestamp,
   jsonb,
   uniqueIndex,
+  integer,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -35,6 +36,7 @@ export const projects = pgTable("projects", {
     .notNull()
     .references(() => users.id),
   name: text("name").notNull(),
+  latestAst: jsonb("latest_ast"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
@@ -66,4 +68,29 @@ export const securityAuditLogs = pgTable("security_audit_logs", {
   detail: jsonb("detail"),
   priority: text("priority").notNull().default("NORMAL"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/** SHA-256 hex of a revoked session JWT. Raw tokens are not stored. */
+export const revokedTokens = pgTable("revoked_tokens", {
+  tokenHash: text("token_hash").primaryKey(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const loginLockouts = pgTable("login_lockouts", {
+  email: text("email").primaryKey(),
+  failures: integer("failures").notNull().default(0),
+  lockedUntil: timestamp("locked_until", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const deployments = pgTable("deployments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id")
+    .notNull()
+    .references(() => projects.id),
+  pagesProjectName: text("pages_project_name").notNull(),
+  httpsUrl: text("https_url"),
+  signedManifest: jsonb("signed_manifest").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });

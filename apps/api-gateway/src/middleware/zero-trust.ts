@@ -46,5 +46,5 @@ export function extractBearerToken(request: FastifyRequest): string | null {
 }
 
 export function isSessionRevoked(token: string): boolean {
-  return memoryStore.revokedTokens.has(token);
+  return memoryStore.isTokenRevoked(token);
 }

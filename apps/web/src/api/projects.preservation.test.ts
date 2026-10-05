@@ -251,8 +251,8 @@ describe("Preservation Property Tests: Save Operations", () => {
       })
     ).rejects.toThrow("Internal server error");
 
-    // Test network error
-    mockFetch.mockRejectedValueOnce(new Error("Network error"));
+    // Network errors are retried once, then the same error is thrown.
+    mockFetch.mockRejectedValue(new Error("Network error"));
 
     await expect(
       syncProject({

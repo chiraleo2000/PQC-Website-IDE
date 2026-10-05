@@ -19,6 +19,7 @@ export function PreviewModal() {
   const setCryptoStatus = useEditorStore((s) => s.setCryptoStatus);
   const markSynced = useEditorStore((s) => s.markSynced);
   const pushToast = useEditorStore((s) => s.pushToast);
+  const publishedUrl = useEditorStore((s) => s.publishedUrl);
 
   if (!open) return null;
 
@@ -36,6 +37,7 @@ export function PreviewModal() {
         signerPublicKeyId,
         serverKemPublicKeyB64: kemPublicKeyB64,
         serverX25519PublicKeyB64: x25519PublicKeyB64,
+        projectName,
       });
       markSynced();
       await exportProjectZip({ projectId, authToken, projectName });
@@ -59,6 +61,17 @@ export function PreviewModal() {
         <div>
           <p className="text-sm font-semibold text-ink">Preview — {projectName}</p>
           <p className="text-xs text-ink-muted">Live canvas render · Export uses server compiler + PQC sync</p>
+          {publishedUrl && (
+            <a
+              className="text-xs text-accent underline"
+              href={publishedUrl}
+              target="_blank"
+              rel="noreferrer"
+              data-testid="published-url"
+            >
+              {publishedUrl}
+            </a>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button
